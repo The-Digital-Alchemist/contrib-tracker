@@ -1,54 +1,79 @@
-# React + TypeScript + Vite
+# Canonical Contribution Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web application for tracking repository health, surfacing good first issues, and growing community contributions across Ubuntu, Snapcraft, and the Canonical ecosystem.
 
-Currently, two official plugins are available:
+## 🛠️ Technology Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React** with TypeScript
+- **Vite** for fast development
+- **Tailwind CSS** for styling
+- **Storybook** for component development
+- **GitHub API** integration
 
-## Expanding the ESLint configuration
+## 🚀 Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd contrib-tracker
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+2. Install dependencies:
+```bash
+npm install
 ```
+
+3. Set up GitHub API token (optional but recommended):
+```bash
+cp .env.example .env.local
+# Edit .env.local and add your GitHub token
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+## 📚 Storybook
+
+This project uses Storybook for component development and documentation.
+
+### Running Storybook
+
+```bash
+npm run storybook
+```
+
+This will start Storybook on http://localhost:6006
+
+### Available Components
+
+- **Button** - Primary, secondary, and outline variants
+- **RepoStats** - Repository display with GitHub integration
+- **SetupNotice** - GitHub token setup guidance
+- **ApiStatus** - API configuration status
+
+## 🎨 Development
+
+### Component Development
+
+1. Create your component in `src/components/`
+2. Create a corresponding story file `ComponentName.stories.tsx`
+3. Run Storybook to develop in isolation
+4. Integrate into the main application
+
+### Building
+
+```bash
+npm run build
+```
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
