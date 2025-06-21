@@ -1,4 +1,5 @@
 import Button from './components/Button';
+import RepoStats from './components/RepoStats';
 import './App.css'
 
 function App() {
@@ -34,6 +35,10 @@ function App() {
                 Join the Community
               </Button>
             </div>
+          </div>
+
+          <div className="mt-8">
+            <RepoStats />
           </div>
 
           <div className="mt-8 text-center">
