@@ -74,13 +74,13 @@ describe('useCanonicalRepos', () => {
     });
 
     expect(result.current.repos).toEqual(mockRepos);
-    // filteredRepos should be sorted by updated_at desc by default (repo2 first, then repo1)
-    expect(result.current.filteredRepos).toEqual([mockRepos[1], mockRepos[0]]);
+    // Since server-side sorting is used, repos should be in the order returned by API
+    expect(result.current.filteredRepos).toEqual(mockRepos);
     expect(result.current.totalCount).toBe(100);
     expect(result.current.filteredCount).toBe(2);
     expect(result.current.availableLanguages).toEqual(['JavaScript', 'TypeScript']);
     expect(result.current.error).toBeNull();
-    expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 2);
+    expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 2, '', 'updated', 'desc');
   });
 
   it('should handle GitHubApiError', async () => {
@@ -156,7 +156,7 @@ describe('useCanonicalRepos', () => {
     renderHook(() => useCanonicalRepos(customLimit));
 
     await waitFor(() => {
-      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, customLimit);
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, customLimit, '', 'updated', 'desc');
     });
   });
 
@@ -204,15 +204,28 @@ describe('useCanonicalRepos', () => {
       });
     });
 
-    it('should filter repos by search term', async () => {
+    it('should search repos via GitHub API', async () => {
+      // Mock API response for search term
+      const searchResults = [mockRepos[1]]; // Only snapcraft
+      vi.mocked(githubApi.fetchCanonicalRepos).mockResolvedValue({
+        items: searchResults,
+        total_count: 1
+      });
+
       const { result } = renderHook(() => useCanonicalRepos(10, { search: 'snap' }));
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.filteredRepos).toHaveLength(1);
-      expect(result.current.filteredRepos[0].name).toBe('snapcraft');
+      // Should call API with search term (after debounce)
+      await waitFor(() => {
+        expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, 'snap', 'updated', 'desc');
+      }, { timeout: 1000 });
+
+      expect(result.current.repos).toEqual(searchResults);
+      expect(result.current.filteredRepos).toEqual(searchResults);
+      expect(result.current.totalCount).toBe(1);
       expect(result.current.filteredCount).toBe(1);
     });
 
@@ -228,31 +241,43 @@ describe('useCanonicalRepos', () => {
       expect(result.current.filteredCount).toBe(2);
     });
 
-    it('should sort repos by stars in descending order', async () => {
+    it('should sort repos by stars via GitHub API', async () => {
+      // Mock API response sorted by stars
+      const sortedByStars = [mockRepos[2], mockRepos[1], mockRepos[0]]; // juju, snapcraft, ubuntu-server
+      vi.mocked(githubApi.fetchCanonicalRepos).mockResolvedValue({
+        items: sortedByStars,
+        total_count: 3
+      });
+
       const { result } = renderHook(() => useCanonicalRepos(10, { sortBy: 'stars', sortOrder: 'desc' }));
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.filteredRepos[0].stargazers_count).toBe(2000);
-      expect(result.current.filteredRepos[1].stargazers_count).toBe(1000);
-      expect(result.current.filteredRepos[2].stargazers_count).toBe(500);
+      // Should call API with stars sorting
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc');
+      
+      expect(result.current.filteredRepos).toEqual(sortedByStars);
     });
 
-    it('should sort repos by name in ascending order', async () => {
+    it('should sort repos by name client-side', async () => {
       const { result } = renderHook(() => useCanonicalRepos(10, { sortBy: 'name', sortOrder: 'asc' }));
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
 
+      // API call should still use 'updated' since GitHub doesn't support name sorting
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'updated', 'asc');
+      
+      // But client-side sorting should sort by name
       expect(result.current.filteredRepos[0].name).toBe('juju');
       expect(result.current.filteredRepos[1].name).toBe('snapcraft');
       expect(result.current.filteredRepos[2].name).toBe('ubuntu-server');
     });
 
-    it('should combine multiple filters', async () => {
+    it('should combine server-side and client-side filters', async () => {
       const { result } = renderHook(() => useCanonicalRepos(10, { 
         language: 'Python', 
         sortBy: 'stars', 
@@ -263,9 +288,11 @@ describe('useCanonicalRepos', () => {
         expect(result.current.loading).toBe(false);
       });
 
+      // Should call API with stars sorting
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc');
+      
+      // Client-side language filter should apply to all repos
       expect(result.current.filteredRepos).toHaveLength(2);
-      expect(result.current.filteredRepos[0].name).toBe('snapcraft'); // Higher stars
-      expect(result.current.filteredRepos[1].name).toBe('ubuntu-server'); // Lower stars
       expect(result.current.filteredRepos.every(repo => repo.language === 'Python')).toBe(true);
     });
   });

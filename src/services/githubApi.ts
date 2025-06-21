@@ -51,9 +51,32 @@ if (GITHUB_TOKEN) {
 }
 
 export const githubApi = {
-  async fetchCanonicalRepos(page = 1, perPage = 30): Promise<GitHubAPIResponse> {
+  async fetchCanonicalRepos(
+    page = 1, 
+    perPage = 30, 
+    searchQuery = '', 
+    sortBy = 'updated', 
+    sortOrder = 'desc'
+  ): Promise<GitHubAPIResponse> {
     try {
-      const url = `${BASE_URL}/search/repositories?q=org:canonical&sort=updated&order=desc&page=${page}&per_page=${perPage}`;
+      // Build the search query
+      let query = 'org:canonical';
+      
+      // Add search term if provided
+      if (searchQuery.trim()) {
+        query += ` ${searchQuery.trim()}`;
+      }
+      
+      // Build the URL with search parameters
+      const params = new URLSearchParams({
+        q: query,
+        sort: sortBy,
+        order: sortOrder,
+        page: page.toString(),
+        per_page: perPage.toString()
+      });
+      
+      const url = `${BASE_URL}/search/repositories?${params}`;
       
       const response = await fetch(url, { headers });
       

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { githubApi, GitHubApiError } from '../services/githubApi';
 import type { GitHubRepo, GitHubAPIResponse } from '../services/githubApi';
 
@@ -8,6 +8,23 @@ export interface FilterOptions {
   sortBy: 'stars' | 'updated' | 'name';
   sortOrder: 'asc' | 'desc';
   activityFilter: 'all' | 'active' | 'recent';
+}
+
+// Debounce hook for search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 interface UseCanonicalReposState {
@@ -40,13 +57,25 @@ export const useCanonicalRepos = (
   };
 
   const currentFilters = { ...defaultFilters, ...filters };
+  
+  // Debounce search to avoid too many API calls
+  const debouncedSearch = useDebounce(currentFilters.search, 500);
 
-  const fetchRepos = async () => {
+  const fetchRepos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response: GitHubAPIResponse = await githubApi.fetchCanonicalRepos(1, limit);
+      // Map our sort options to GitHub API sort options (GitHub doesn't support name sorting)
+      const githubSortBy = currentFilters.sortBy === 'stars' ? 'stars' : 'updated';
+      
+      const response: GitHubAPIResponse = await githubApi.fetchCanonicalRepos(
+        1, 
+        limit, 
+        debouncedSearch,
+        githubSortBy,
+        currentFilters.sortOrder
+      );
       
       setRepos(response.items);
       setTotalCount(response.total_count);
@@ -60,21 +89,11 @@ export const useCanonicalRepos = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, debouncedSearch, currentFilters.sortBy, currentFilters.sortOrder]);
 
-  // Filtering and sorting logic
+  // Client-side filtering for language and activity (search and sorting handled server-side)
   const filteredRepos = useMemo(() => {
     let filtered = [...repos];
-
-    // Apply search filter
-    if (currentFilters.search.trim()) {
-      const searchTerm = currentFilters.search.toLowerCase();
-      filtered = filtered.filter(repo => 
-        repo.name.toLowerCase().includes(searchTerm) ||
-        repo.description?.toLowerCase().includes(searchTerm) ||
-        repo.full_name.toLowerCase().includes(searchTerm)
-      );
-    }
 
     // Apply language filter
     if (currentFilters.language) {
@@ -101,28 +120,17 @@ export const useCanonicalRepos = (
       });
     }
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      
-      switch (currentFilters.sortBy) {
-        case 'stars':
-          comparison = a.stargazers_count - b.stargazers_count;
-          break;
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'updated':
-        default:
-          comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
-          break;
-      }
-
-      return currentFilters.sortOrder === 'desc' ? -comparison : comparison;
-    });
+    // Note: Search and sorting are now handled server-side via GitHub API
+    // Only client-side name sorting for GitHub API compatibility
+    if (currentFilters.sortBy === 'name') {
+      filtered.sort((a, b) => {
+        const comparison = a.name.localeCompare(b.name);
+        return currentFilters.sortOrder === 'desc' ? -comparison : comparison;
+      });
+    }
 
     return filtered;
-  }, [repos, currentFilters]);
+  }, [repos, currentFilters.language, currentFilters.activityFilter, currentFilters.sortBy, currentFilters.sortOrder]);
 
   // Get unique languages for filter dropdown
   const availableLanguages = useMemo(() => {
@@ -136,7 +144,7 @@ export const useCanonicalRepos = (
 
   useEffect(() => {
     fetchRepos();
-  }, [limit]);
+  }, [fetchRepos]);
 
   return {
     repos,
