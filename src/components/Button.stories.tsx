@@ -8,11 +8,11 @@ const meta: Meta<typeof Button> = {
     layout: 'centered',
   },
   tags: ['autodocs'],
-  argTypes: {
-    variant: {
-      control: { type: 'select' },
-      options: ['primary', 'secondary', 'outline'],
-    },
+      argTypes: {
+      variant: {
+        control: { type: 'select' },
+        options: ['primary', 'secondary', 'positive', 'negative', 'neutral'],
+      },
     size: {
       control: { type: 'select' },
       options: ['small', 'medium', 'large'],
@@ -41,10 +41,24 @@ export const Secondary: Story = {
   },
 };
 
-export const Outline: Story = {
+export const Positive: Story = {
   args: {
-    variant: 'outline',
-    children: 'Outline Button',
+    variant: 'positive',
+    children: 'Positive Button',
+  },
+};
+
+export const Negative: Story = {
+  args: {
+    variant: 'negative',
+    children: 'Negative Button',
+  },
+};
+
+export const Neutral: Story = {
+  args: {
+    variant: 'neutral',
+    children: 'Neutral Button',
   },
 };
 
@@ -85,7 +99,9 @@ export const AllVariants: Story = {
     <div className="flex gap-4 flex-wrap">
       <Button variant="primary">Primary</Button>
       <Button variant="secondary">Secondary</Button>
-      <Button variant="outline">Outline</Button>
+      <Button variant="positive">Positive</Button>
+      <Button variant="negative">Negative</Button>
+      <Button variant="neutral">Neutral</Button>
     </div>
   ),
 };
