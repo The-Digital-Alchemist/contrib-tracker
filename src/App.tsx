@@ -1,5 +1,7 @@
 import Button from './components/Button';
 import RepoStats from './components/RepoStats';
+import SetupNotice from './components/SetupNotice';
+import ApiStatus from './components/ApiStatus';
 import './App.css'
 
 function App() {
@@ -16,6 +18,9 @@ function App() {
         </header>
 
         <main className="max-w-2xl mx-auto">
+          <SetupNotice />
+          <ApiStatus />
+          
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               Get Started
