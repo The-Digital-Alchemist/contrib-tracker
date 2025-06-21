@@ -1,10 +1,20 @@
+import { useState } from 'react';
 import Button from './components/Button';
 import RepoStats from './components/RepoStats';
 import SetupNotice from './components/SetupNotice';
 import ApiStatus from './components/ApiStatus';
+import SearchInput from './components/SearchInput';
+import type { FilterOptions } from './hooks/useCanonicalRepos';
 import './App.css'
 
 function App() {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filters: Partial<FilterOptions> = {
+    search: searchTerm,
+    sortBy: 'updated',
+    sortOrder: 'desc'
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -43,7 +53,14 @@ function App() {
           </div>
 
           <div className="mt-8">
-            <RepoStats />
+            <div className="mb-6">
+              <SearchInput
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+                placeholder="Search repositories by name or description..."
+              />
+            </div>
+            <RepoStats filters={filters} />
           </div>
 
           <div className="mt-8 text-center">

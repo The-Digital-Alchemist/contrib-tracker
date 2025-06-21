@@ -1,9 +1,13 @@
 import React from 'react';
-import { useCanonicalRepos } from '../hooks/useCanonicalRepos';
+import { useCanonicalRepos, type FilterOptions } from '../hooks/useCanonicalRepos';
 import Button from './Button';
 
-const RepoStats: React.FC = () => {
-  const { repos, totalCount, loading, error, refetch } = useCanonicalRepos(10);
+interface RepoStatsProps {
+  filters?: Partial<FilterOptions>;
+}
+
+const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
+  const { repos, filteredRepos, totalCount, filteredCount, loading, error, refetch } = useCanonicalRepos(30, filters);
 
   if (loading) {
     return (
@@ -89,12 +93,12 @@ const RepoStats: React.FC = () => {
           Canonical Repositories
         </h3>
         <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-          {repos.length} of {totalCount.toLocaleString()} repos
+          {filteredCount} of {totalCount.toLocaleString()} repos
         </div>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2">
-        {repos.map((repo) => (
+        {filteredRepos.map((repo) => (
           <div 
             key={repo.id} 
             className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all duration-200"
