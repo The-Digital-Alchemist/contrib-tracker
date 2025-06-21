@@ -25,9 +25,12 @@ describe('useCanonicalRepos', () => {
     const { result } = renderHook(() => useCanonicalRepos());
     
     expect(result.current.repos).toEqual([]);
+    expect(result.current.filteredRepos).toEqual([]);
     expect(result.current.totalCount).toBe(0);
+    expect(result.current.filteredCount).toBe(0);
     expect(result.current.loading).toBe(true);
     expect(result.current.error).toBeNull();
+    expect(result.current.availableLanguages).toEqual([]);
     expect(typeof result.current.refetch).toBe('function');
   });
 
@@ -71,7 +74,11 @@ describe('useCanonicalRepos', () => {
     });
 
     expect(result.current.repos).toEqual(mockRepos);
+    // filteredRepos should be sorted by updated_at desc by default (repo2 first, then repo1)
+    expect(result.current.filteredRepos).toEqual([mockRepos[1], mockRepos[0]]);
     expect(result.current.totalCount).toBe(100);
+    expect(result.current.filteredCount).toBe(2);
+    expect(result.current.availableLanguages).toEqual(['JavaScript', 'TypeScript']);
     expect(result.current.error).toBeNull();
     expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 2);
   });
@@ -150,6 +157,116 @@ describe('useCanonicalRepos', () => {
 
     await waitFor(() => {
       expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, customLimit);
+    });
+  });
+
+  describe('filtering functionality', () => {
+    const mockRepos = [
+      { 
+        id: 1, 
+        name: 'ubuntu-server', 
+        full_name: 'canonical/ubuntu-server',
+        description: 'Ubuntu Server packages',
+        stargazers_count: 500,
+        forks_count: 50,
+        language: 'Python',
+        updated_at: '2024-01-01T00:00:00Z',
+        html_url: 'https://github.com/canonical/ubuntu-server'
+      },
+      { 
+        id: 2, 
+        name: 'snapcraft', 
+        full_name: 'canonical/snapcraft',
+        description: 'Tool for creating snaps',
+        stargazers_count: 1000,
+        forks_count: 100,
+        language: 'Python',
+        updated_at: '2024-02-01T00:00:00Z',
+        html_url: 'https://github.com/canonical/snapcraft'
+      },
+      { 
+        id: 3, 
+        name: 'juju', 
+        full_name: 'canonical/juju',
+        description: 'Juju application deployment',
+        stargazers_count: 2000,
+        forks_count: 200,
+        language: 'Go',
+        updated_at: '2023-06-01T00:00:00Z',
+        html_url: 'https://github.com/canonical/juju'
+      }
+    ];
+
+    beforeEach(() => {
+      vi.mocked(githubApi.fetchCanonicalRepos).mockResolvedValue({
+        items: mockRepos,
+        total_count: 3
+      });
+    });
+
+    it('should filter repos by search term', async () => {
+      const { result } = renderHook(() => useCanonicalRepos(10, { search: 'snap' }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.filteredRepos).toHaveLength(1);
+      expect(result.current.filteredRepos[0].name).toBe('snapcraft');
+      expect(result.current.filteredCount).toBe(1);
+    });
+
+    it('should filter repos by language', async () => {
+      const { result } = renderHook(() => useCanonicalRepos(10, { language: 'Python' }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.filteredRepos).toHaveLength(2);
+      expect(result.current.filteredRepos.every(repo => repo.language === 'Python')).toBe(true);
+      expect(result.current.filteredCount).toBe(2);
+    });
+
+    it('should sort repos by stars in descending order', async () => {
+      const { result } = renderHook(() => useCanonicalRepos(10, { sortBy: 'stars', sortOrder: 'desc' }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.filteredRepos[0].stargazers_count).toBe(2000);
+      expect(result.current.filteredRepos[1].stargazers_count).toBe(1000);
+      expect(result.current.filteredRepos[2].stargazers_count).toBe(500);
+    });
+
+    it('should sort repos by name in ascending order', async () => {
+      const { result } = renderHook(() => useCanonicalRepos(10, { sortBy: 'name', sortOrder: 'asc' }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.filteredRepos[0].name).toBe('juju');
+      expect(result.current.filteredRepos[1].name).toBe('snapcraft');
+      expect(result.current.filteredRepos[2].name).toBe('ubuntu-server');
+    });
+
+    it('should combine multiple filters', async () => {
+      const { result } = renderHook(() => useCanonicalRepos(10, { 
+        language: 'Python', 
+        sortBy: 'stars', 
+        sortOrder: 'desc' 
+      }));
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.filteredRepos).toHaveLength(2);
+      expect(result.current.filteredRepos[0].name).toBe('snapcraft'); // Higher stars
+      expect(result.current.filteredRepos[1].name).toBe('ubuntu-server'); // Lower stars
+      expect(result.current.filteredRepos.every(repo => repo.language === 'Python')).toBe(true);
     });
   });
 }); 
