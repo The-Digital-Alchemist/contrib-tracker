@@ -4,17 +4,24 @@ import RepoStats from './components/RepoStats';
 import SetupNotice from './components/SetupNotice';
 import ApiStatus from './components/ApiStatus';
 import SearchInput from './components/SearchInput';
+import LanguageFilter from './components/LanguageFilter';
+import { useCanonicalRepos } from './hooks/useCanonicalRepos';
 import type { FilterOptions } from './hooks/useCanonicalRepos';
 import './App.css'
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   
   const filters: Partial<FilterOptions> = {
     search: searchTerm,
+    language: selectedLanguage,
     sortBy: 'updated',
     sortOrder: 'desc'
   };
+
+  // Get available languages for the filter dropdown
+  const { availableLanguages } = useCanonicalRepos(30, filters);
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -53,12 +60,21 @@ function App() {
           </div>
 
           <div className="mt-8">
-            <div className="mb-6">
+            <div className="mb-6 space-y-4">
               <SearchInput
                 value={searchTerm}
                 onValueChange={setSearchTerm}
                 placeholder="Search repositories by name or description..."
               />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <LanguageFilter
+                    value={selectedLanguage}
+                    onValueChange={setSelectedLanguage}
+                    availableLanguages={availableLanguages}
+                  />
+                </div>
+              </div>
             </div>
             <RepoStats filters={filters} />
           </div>
