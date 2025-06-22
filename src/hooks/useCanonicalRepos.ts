@@ -58,8 +58,9 @@ export const useCanonicalRepos = (
 
   const currentFilters = { ...defaultFilters, ...filters };
   
-  // Debounce search to avoid too many API calls
+  // Debounce search and language to avoid too many API calls
   const debouncedSearch = useDebounce(currentFilters.search, 500);
+  const debouncedLanguage = useDebounce(currentFilters.language, 300);
 
   const fetchRepos = useCallback(async () => {
     try {
@@ -74,7 +75,8 @@ export const useCanonicalRepos = (
         limit, 
         debouncedSearch,
         githubSortBy,
-        currentFilters.sortOrder
+        currentFilters.sortOrder,
+        debouncedLanguage
       );
       
       setRepos(response.items);
@@ -89,18 +91,11 @@ export const useCanonicalRepos = (
     } finally {
       setLoading(false);
     }
-  }, [limit, debouncedSearch, currentFilters.sortBy, currentFilters.sortOrder]);
+  }, [limit, debouncedSearch, debouncedLanguage, currentFilters.sortBy, currentFilters.sortOrder]);
 
-  // Client-side filtering for language and activity (search and sorting handled server-side)
+  // Client-side filtering for activity only (search, language, and sorting handled server-side)
   const filteredRepos = useMemo(() => {
     let filtered = [...repos];
-
-    // Apply language filter
-    if (currentFilters.language) {
-      filtered = filtered.filter(repo => 
-        repo.language?.toLowerCase() === currentFilters.language.toLowerCase()
-      );
-    }
 
     // Apply activity filter
     if (currentFilters.activityFilter !== 'all') {
@@ -130,9 +125,11 @@ export const useCanonicalRepos = (
     }
 
     return filtered;
-  }, [repos, currentFilters.language, currentFilters.activityFilter, currentFilters.sortBy, currentFilters.sortOrder]);
+  }, [repos, currentFilters.activityFilter, currentFilters.sortBy, currentFilters.sortOrder]);
 
   // Get unique languages for filter dropdown
+  // Note: Since language filtering is now server-side, we get languages from current results
+  // This means available languages will change based on search results, which is actually better UX
   const availableLanguages = useMemo(() => {
     const languages = repos
       .map(repo => repo.language)

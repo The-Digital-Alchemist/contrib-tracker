@@ -80,7 +80,7 @@ describe('useCanonicalRepos', () => {
     expect(result.current.filteredCount).toBe(2);
     expect(result.current.availableLanguages).toEqual(['JavaScript', 'TypeScript']);
     expect(result.current.error).toBeNull();
-    expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 2, '', 'updated', 'desc');
+    expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 2, '', 'updated', 'desc', '');
   });
 
   it('should handle GitHubApiError', async () => {
@@ -156,7 +156,7 @@ describe('useCanonicalRepos', () => {
     renderHook(() => useCanonicalRepos(customLimit));
 
     await waitFor(() => {
-      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, customLimit, '', 'updated', 'desc');
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, customLimit, '', 'updated', 'desc', '');
     });
   });
 
@@ -220,7 +220,7 @@ describe('useCanonicalRepos', () => {
 
       // Should call API with search term (after debounce)
       await waitFor(() => {
-        expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, 'snap', 'updated', 'desc');
+        expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, 'snap', 'updated', 'desc', '');
       }, { timeout: 1000 });
 
       expect(result.current.repos).toEqual(searchResults);
@@ -229,15 +229,28 @@ describe('useCanonicalRepos', () => {
       expect(result.current.filteredCount).toBe(1);
     });
 
-    it('should filter repos by language', async () => {
+    it('should filter repos by language via GitHub API', async () => {
+      // Mock API response for language filter
+      const pythonRepos = mockRepos.filter(repo => repo.language === 'Python');
+      vi.mocked(githubApi.fetchCanonicalRepos).mockResolvedValue({
+        items: pythonRepos,
+        total_count: 2
+      });
+
       const { result } = renderHook(() => useCanonicalRepos(10, { language: 'Python' }));
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.filteredRepos).toHaveLength(2);
-      expect(result.current.filteredRepos.every(repo => repo.language === 'Python')).toBe(true);
+      // Should call API with language parameter (after debounce)
+      await waitFor(() => {
+        expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'updated', 'desc', 'Python');
+      }, { timeout: 500 });
+
+      expect(result.current.repos).toEqual(pythonRepos);
+      expect(result.current.filteredRepos).toEqual(pythonRepos);
+      expect(result.current.totalCount).toBe(2);
       expect(result.current.filteredCount).toBe(2);
     });
 
@@ -256,7 +269,7 @@ describe('useCanonicalRepos', () => {
       });
 
       // Should call API with stars sorting
-      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc');
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc', '');
       
       expect(result.current.filteredRepos).toEqual(sortedByStars);
     });
@@ -269,7 +282,7 @@ describe('useCanonicalRepos', () => {
       });
 
       // API call should still use 'updated' since GitHub doesn't support name sorting
-      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'updated', 'asc');
+      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'updated', 'asc', '');
       
       // But client-side sorting should sort by name
       expect(result.current.filteredRepos[0].name).toBe('juju');
@@ -277,7 +290,14 @@ describe('useCanonicalRepos', () => {
       expect(result.current.filteredRepos[2].name).toBe('ubuntu-server');
     });
 
-    it('should combine server-side and client-side filters', async () => {
+    it('should combine server-side filters', async () => {
+      // Mock API response for combined filters
+      const pythonRepos = mockRepos.filter(repo => repo.language === 'Python');
+      vi.mocked(githubApi.fetchCanonicalRepos).mockResolvedValue({
+        items: pythonRepos,
+        total_count: 2
+      });
+
       const { result } = renderHook(() => useCanonicalRepos(10, { 
         language: 'Python', 
         sortBy: 'stars', 
@@ -288,12 +308,13 @@ describe('useCanonicalRepos', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Should call API with stars sorting
-      expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc');
+      // Should call API with both language and stars sorting (after debounce)
+      await waitFor(() => {
+        expect(githubApi.fetchCanonicalRepos).toHaveBeenCalledWith(1, 10, '', 'stars', 'desc', 'Python');
+      }, { timeout: 500 });
       
-      // Client-side language filter should apply to all repos
-      expect(result.current.filteredRepos).toHaveLength(2);
-      expect(result.current.filteredRepos.every(repo => repo.language === 'Python')).toBe(true);
+      expect(result.current.repos).toEqual(pythonRepos);
+      expect(result.current.filteredRepos).toEqual(pythonRepos);
     });
   });
 }); 

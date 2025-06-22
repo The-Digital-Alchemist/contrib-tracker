@@ -56,7 +56,8 @@ export const githubApi = {
     perPage = 30, 
     searchQuery = '', 
     sortBy = 'updated', 
-    sortOrder = 'desc'
+    sortOrder = 'desc',
+    language = ''
   ): Promise<GitHubAPIResponse> {
     try {
       // Build the search query
@@ -65,6 +66,11 @@ export const githubApi = {
       // Add search term if provided
       if (searchQuery.trim()) {
         query += ` ${searchQuery.trim()}`;
+      }
+      
+      // Add language filter if provided
+      if (language.trim()) {
+        query += ` language:${language.trim()}`;
       }
       
       // Build the URL with search parameters
