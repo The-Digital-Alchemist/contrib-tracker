@@ -7,7 +7,7 @@ interface RepoStatsProps {
 }
 
 const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
-  const { repos, filteredRepos, totalCount, filteredCount, loading, error, refetch } = useCanonicalRepos(30, filters);
+  const { filteredRepos, totalCount, filteredCount, loading, error, refetch } = useCanonicalRepos(30, filters);
 
   if (loading) {
     return (

@@ -18,7 +18,6 @@ const LanguageFilter: React.FC<LanguageFilterProps> = ({
   onValueChange,
   availableLanguages,
   disabled = false,
-  placeholder = "Filter by language..."
 }) => {
   return (
     <div className="relative">
