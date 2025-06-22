@@ -7,49 +7,49 @@ describe('Button', () => {
     render(<Button>Click me</Button>);
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass('p-button', 'p-button--neutral');
+    expect(button).toHaveClass('bg-gray-100', 'text-gray-700');
   });
 
   it('renders with primary variant', () => {
     render(<Button variant="primary">Primary Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--primary');
+    expect(button).toHaveClass('bg-blue-600', 'text-white');
   });
 
   it('renders with secondary variant', () => {
     render(<Button variant="secondary">Secondary Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--secondary');
+    expect(button).toHaveClass('bg-gray-200', 'text-gray-900');
   });
 
   it('renders with positive variant', () => {
     render(<Button variant="positive">Positive Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--positive');
+    expect(button).toHaveClass('bg-green-600', 'text-white');
   });
 
   it('renders with negative variant', () => {
     render(<Button variant="negative">Negative Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--negative');
+    expect(button).toHaveClass('bg-red-600', 'text-white');
   });
 
   it('renders with small size', () => {
     render(<Button size="small">Small Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--small');
+    expect(button).toHaveClass('px-3', 'py-1.5', 'text-sm');
   });
 
   it('renders with large size', () => {
     render(<Button size="large">Large Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('p-button--large');
+    expect(button).toHaveClass('px-6', 'py-3', 'text-lg');
   });
 
   it('renders full width', () => {
     render(<Button fullWidth>Full Width Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('u-full-width');
+    expect(button).toHaveClass('w-full');
   });
 
   it('handles click events', () => {
@@ -66,15 +66,15 @@ describe('Button', () => {
     render(<Button disabled>Disabled Button</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('is-disabled');
+    expect(button).toHaveClass('opacity-50', 'cursor-not-allowed');
   });
 
   it('shows loading state', () => {
     render(<Button loading>Loading Button</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('is-disabled');
-    expect(button.querySelector('.p-icon--spinner')).toBeInTheDocument();
+    expect(button).toHaveClass('opacity-50', 'cursor-not-allowed');
+    expect(button.querySelector('svg')).toBeInTheDocument(); // Spinner is now an SVG
   });
 
   it('does not call onClick when disabled', () => {
