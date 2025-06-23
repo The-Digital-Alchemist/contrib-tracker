@@ -17,15 +17,7 @@ const meta: Meta<typeof ApiStatus> = {
     variant: {
       control: 'select',
       options: ['success', 'warning', 'error'],
-      description: 'Visual variant indicating the API status',
-    },
-    rateLimitRemaining: {
-      control: 'number',
-      description: 'Current rate limit remaining',
-    },
-    rateLimitMax: {
-      control: 'number',
-      description: 'Maximum rate limit',
+      description: 'Visual variant indicating the API status (overrides automatic detection)',
     },
     customMessage: {
       control: 'text',
@@ -41,13 +33,11 @@ export const Success: Story = {
   name: 'API Healthy',
   args: {
     variant: 'success',
-    rateLimitRemaining: 4850,
-    rateLimitMax: 5000,
   },
   parameters: {
     docs: {
       description: {
-        story: 'API is working normally with plenty of rate limit remaining.',
+        story: 'API is working normally with real-time rate limit data displayed.',
       },
     },
   },
@@ -57,13 +47,11 @@ export const Warning: Story = {
   name: 'Rate Limit Low',
   args: {
     variant: 'warning',
-    rateLimitRemaining: 245,
-    rateLimitMax: 5000,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Rate limit is running low, user should be aware of approaching limits.',
+        story: 'Forced warning state to show how low rate limits are displayed.',
       },
     },
   },
@@ -84,17 +72,15 @@ export const Error: Story = {
   },
 };
 
-export const RateLimitExhausted: Story = {
-  name: 'Rate Limit Exhausted',
+export const AutoDetection: Story = {
+  name: 'Automatic Detection',
   args: {
-    variant: 'warning',
-    rateLimitRemaining: 0,
-    rateLimitMax: 5000,
+    // No variant specified - will auto-detect based on real rate limits
   },
   parameters: {
     docs: {
       description: {
-        story: 'All rate limit has been used up for this hour.',
+        story: 'Automatically detects API status and rate limits from GitHub API. Status will change based on actual usage.',
       },
     },
   },

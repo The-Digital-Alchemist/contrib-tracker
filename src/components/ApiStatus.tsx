@@ -1,38 +1,47 @@
 import React from 'react';
+import { useGitHubRateLimit } from '../hooks/useGitHubRateLimit';
 
 export interface ApiStatusProps {
-  /** Visual variant indicating the API status */
+  /** Visual variant indicating the API status (overrides automatic detection) */
   variant?: 'success' | 'warning' | 'error';
-  /** Current rate limit remaining (for warning state) */
-  rateLimitRemaining?: number;
-  /** Maximum rate limit */
-  rateLimitMax?: number;
   /** Custom message to override default */
   customMessage?: string;
 }
 
 const ApiStatus: React.FC<ApiStatusProps> = ({ 
   variant, 
-  rateLimitRemaining = 4500,
-  rateLimitMax = 5000,
   customMessage 
 }) => {
   const tokenValue = import.meta.env.VITE_GITHUB_TOKEN;
   const hasToken = tokenValue && tokenValue !== 'your_github_token_here' && tokenValue.trim() !== '';
+  
+  // Fetch real rate limit data
+  const { coreRateLimit, loading: rateLimitLoading, error: rateLimitError } = useGitHubRateLimit();
   
   // Only show ApiStatus when there's a token (SetupNotice handles no-token case)
   if (!hasToken && !variant) {
     return null;
   }
   
-  // For real usage, determine variant based on actual API status
-  // For stories, use the provided variant
-  const  actualVariant = variant || 'success';
+  // Determine variant based on actual rate limits (unless overridden)
+  let actualVariant = variant || 'success';
   
-  // In real usage you could actually check  rate limits here
-  // if (!variant && rateLimitRemaining < rateLimitMax * 0.1) {
-  //   actualVariant = 'warning';
-  // }
+  if (!variant && coreRateLimit && !rateLimitLoading) {
+    const { remaining, limit } = coreRateLimit;
+    const rateLimitPercentage = remaining / limit;
+    
+    if (rateLimitError) {
+      actualVariant = 'error';
+    } else if (rateLimitPercentage < 0.1) { // Less than 10% remaining
+      actualVariant = 'warning';
+    } else {
+      actualVariant = 'success';
+    }
+  }
+
+  // Get actual values for display
+  const rateLimitRemaining = coreRateLimit?.remaining || 0;
+  const rateLimitMax = coreRateLimit?.limit || 5000;
 
   // Configuration for different variants
   const variantConfig = {
@@ -43,7 +52,7 @@ const ApiStatus: React.FC<ApiStatusProps> = ({
       iconBg: 'bg-green-100',
       icon: '✅',
       title: 'API Connected',
-      message: customMessage || `GitHub API active - ${rateLimitRemaining?.toLocaleString()}/${rateLimitMax?.toLocaleString()} requests remaining`
+      message: customMessage || `GitHub API active - ${rateLimitRemaining.toLocaleString()}/${rateLimitMax.toLocaleString()} requests remaining`
     },
     warning: {
       bgColor: 'bg-yellow-50',
@@ -52,7 +61,7 @@ const ApiStatus: React.FC<ApiStatusProps> = ({
       iconBg: 'bg-yellow-100',
       icon: '⚠️',
       title: 'Rate Limit Low',
-      message: customMessage || `Only ${rateLimitRemaining?.toLocaleString()} of ${rateLimitMax?.toLocaleString()} API requests remaining this hour`
+      message: customMessage || `Only ${rateLimitRemaining.toLocaleString()} of ${rateLimitMax.toLocaleString()} API requests remaining this hour`
     },
     error: {
       bgColor: 'bg-red-50',
@@ -61,7 +70,7 @@ const ApiStatus: React.FC<ApiStatusProps> = ({
       iconBg: 'bg-red-100',
       icon: '❌',
       title: 'API Error',
-      message: customMessage || 'GitHub API requests failing. Check your token or try again later.'
+      message: customMessage || rateLimitError || 'GitHub API requests failing. Check your token or try again later.'
     }
   };
 
