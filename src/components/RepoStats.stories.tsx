@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import RepoStats from './RepoStats';
 
 const meta: Meta<typeof RepoStats> = {

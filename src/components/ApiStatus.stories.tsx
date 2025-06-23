@@ -1,73 +1,62 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import ApiStatus from './ApiStatus';
 
 const meta: Meta<typeof ApiStatus> = {
   title: 'Components/ApiStatus',
   component: ApiStatus,
   parameters: {
-    layout: 'padded',
+    layout: 'centered',
+    docs: {
+      description: {
+        component: 'Displays the current status of the GitHub API connection and rate limits.',
+      },
+    },
   },
   tags: ['autodocs'],
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: ['success', 'warning', 'error'],
+      description: 'Visual variant indicating the API status',
+    },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story: 'Shows when GitHub token is properly configured. Displays green confirmation banner.',
-      },
-    },
+export const Success: Story = {
+  name: 'API Connected',
+  args: {
+    variant: 'success',
   },
-};
-
-export const ConfiguredState: Story = {
   decorators: [
     (Story) => {
-      // Mock environment with token to show the status
-      const originalEnv = import.meta.env.VITE_GITHUB_TOKEN;
-      // @ts-ignore - Mock having a token for demo
-      import.meta.env.VITE_GITHUB_TOKEN = 'mock_token_for_demo';
-      
-      return (
-        <div>
-          <Story />
-        </div>
-      );
+      return <Story />;
     },
   ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'This story simulates having a configured GitHub token to show the success state.',
-      },
-    },
-  },
 };
 
-export const HiddenState: Story = {
+export const Warning: Story = {
+  name: 'Rate Limited',
+  args: {
+    variant: 'warning',
+  },
   decorators: [
     (Story) => {
-      // Mock environment without token (component should not render)
-      const originalEnv = import.meta.env.VITE_GITHUB_TOKEN;
-      // @ts-ignore - Clear token to hide component
-      import.meta.env.VITE_GITHUB_TOKEN = '';
-      
-      return (
-        <div>
-          <p className="text-gray-500 italic">Component hidden when no token is configured</p>
-          <Story />
-        </div>
-      );
+      return <Story />;
     },
   ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'When no token is configured, this component returns null and is hidden.',
-      },
-    },
+};
+
+export const Error: Story = {
+  name: 'No Token',
+  args: {
+    variant: 'error',
   },
+  decorators: [
+    (Story) => {
+      return <Story />;
+    },
+  ],
 }; 

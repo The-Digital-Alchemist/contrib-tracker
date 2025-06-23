@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import SearchInput from './SearchInput';
 
@@ -39,6 +39,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Interactive wrapper component for stories
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SearchInputWrapper = (args: any) => {
   const [value, setValue] = useState(args.value || '');
   
@@ -131,7 +132,7 @@ export const Sizes: Story = {
 // Interactive demo with results
 export const WithMockResults: Story = {
   render: () => {
-    const [searchValue, setSearchValue] = useState('');
+    const [searchValue, setSearchValue] = useState<string>('');
     
     const mockRepos = [
       'react',
