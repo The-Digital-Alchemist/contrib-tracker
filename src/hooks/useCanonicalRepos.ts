@@ -7,7 +7,11 @@ export interface FilterOptions {
   language: string;
   sortBy: 'stars' | 'updated' | 'name';
   sortOrder: 'asc' | 'desc';
-  activityFilter: 'all' | 'active' | 'recent';
+  activityFilter: 'all' | 'active' | 'recent' | 'stale';
+  contributorFriendly: 'all' | 'good-first-issues' | 'highly-active' | 'well-maintained';
+  repositorySize: 'all' | 'small' | 'medium' | 'large';
+  minStars: number;
+  hasRecentActivity: boolean;
 }
 
 // Debounce hook for search
@@ -53,7 +57,11 @@ export const useCanonicalRepos = (
     language: '',
     sortBy: 'updated',
     sortOrder: 'desc',
-    activityFilter: 'all'
+    activityFilter: 'all',
+    contributorFriendly: 'all',
+    repositorySize: 'all',
+    minStars: 0,
+    hasRecentActivity: false
   };
 
   const currentFilters = { ...defaultFilters, ...filters };
@@ -93,7 +101,7 @@ export const useCanonicalRepos = (
     }
   }, [limit, debouncedSearch, debouncedLanguage, currentFilters.sortBy, currentFilters.sortOrder]);
 
-  // Client-side filtering for activity only (search, language, and sorting handled server-side)
+  // Client-side filtering for advanced criteria (search, language, and basic sorting handled server-side)
   const filteredRepos = useMemo(() => {
     let filtered = [...repos];
 
@@ -102,6 +110,7 @@ export const useCanonicalRepos = (
       const now = new Date();
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
       const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
       filtered = filtered.filter(repo => {
         const updatedAt = new Date(repo.updated_at);
@@ -110,13 +119,43 @@ export const useCanonicalRepos = (
           return updatedAt >= oneMonthAgo;
         } else if (currentFilters.activityFilter === 'active') {
           return updatedAt >= sixMonthsAgo;
+        } else if (currentFilters.activityFilter === 'stale') {
+          return updatedAt < oneYearAgo;
         }
         return true;
       });
     }
 
-    // Note: Search and sorting are now handled server-side via GitHub API
-    // Only client-side name sorting for GitHub API compatibility
+    // Apply minimum stars filter
+    if (currentFilters.minStars > 0) {
+      filtered = filtered.filter(repo => repo.stargazers_count >= currentFilters.minStars);
+    }
+
+    // Apply repository size filter (based on stars as a proxy for size/popularity)
+    if (currentFilters.repositorySize !== 'all') {
+      filtered = filtered.filter(repo => {
+        const stars = repo.stargazers_count;
+        if (currentFilters.repositorySize === 'small') {
+          return stars < 100;
+        } else if (currentFilters.repositorySize === 'medium') {
+          return stars >= 100 && stars < 1000;
+        } else if (currentFilters.repositorySize === 'large') {
+          return stars >= 1000;
+        }
+        return true;
+      });
+    }
+
+    // Apply recent activity filter
+    if (currentFilters.hasRecentActivity) {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(repo => new Date(repo.updated_at) >= oneWeekAgo);
+    }
+
+    // Note: contributorFriendly filter will require API calls to check for good first issues
+    // This will be implemented as a separate async operation to avoid performance issues
+
+    // Client-side name sorting for GitHub API compatibility
     if (currentFilters.sortBy === 'name') {
       filtered.sort((a, b) => {
         const comparison = a.name.localeCompare(b.name);
@@ -125,7 +164,15 @@ export const useCanonicalRepos = (
     }
 
     return filtered;
-  }, [repos, currentFilters.activityFilter, currentFilters.sortBy, currentFilters.sortOrder]);
+  }, [
+    repos, 
+    currentFilters.activityFilter, 
+    currentFilters.sortBy, 
+    currentFilters.sortOrder,
+    currentFilters.minStars,
+    currentFilters.repositorySize,
+    currentFilters.hasRecentActivity
+  ]);
 
   // Get unique languages for filter dropdown
   // Note: Since language filtering is now server-side, we get languages from current results
