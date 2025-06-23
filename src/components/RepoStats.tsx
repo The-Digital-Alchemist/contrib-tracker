@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCanonicalRepos, type FilterOptions } from '../hooks/useCanonicalRepos';
+import type { GitHubRepo } from '../services/githubApi';
 import Button from './Button';
+import RepoDetail from './RepoDetail';
 
 interface RepoStatsProps {
   filters?: Partial<FilterOptions>;
@@ -8,6 +10,7 @@ interface RepoStatsProps {
 
 const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
   const { filteredRepos, totalCount, filteredCount, loading, error, refetch } = useCanonicalRepos(30, filters);
+  const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
   if (loading) {
     return (
@@ -86,6 +89,16 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
     return colors[language] || 'bg-gray-100 text-gray-700';
   };
 
+  // Show repository detail if one is selected
+  if (selectedRepo) {
+    return (
+      <RepoDetail 
+        repo={selectedRepo} 
+        onClose={() => setSelectedRepo(null)} 
+      />
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
@@ -101,25 +114,18 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
         {filteredRepos.map((repo) => (
           <div 
             key={repo.id} 
-            className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all duration-200"
+            className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 hover:bg-gray-100 transition-all duration-200 cursor-pointer relative"
+            onClick={() => setSelectedRepo(repo)}
           >
+            <div className="absolute top-2 right-2 text-gray-400 opacity-60">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </div>
             <div className="flex items-start justify-between mb-3">
-              <a 
-                href={repo.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 flex items-center gap-2 group"
-              >
+              <h3 className="text-lg font-semibold text-gray-900">
                 {repo.name}
-                <svg 
-                  className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+              </h3>
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -136,17 +142,20 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
             
             <div className="flex items-center justify-between">
               {repo.language && (
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLanguageColor(repo.language)}`}>
-                  {repo.language}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLanguageColor(repo.language)}`}>
+                    {repo.language}
+                  </span>
+                </div>
               )}
               <a 
                 href={repo.html_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors duration-200 flex items-center gap-1 ml-auto"
               >
-                View on GitHub
+                GitHub
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
