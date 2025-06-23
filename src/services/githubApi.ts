@@ -15,6 +15,29 @@ interface GitHubAPIResponse {
   items: GitHubRepo[];
 }
 
+// Rate limit types
+interface GitHubRateLimit {
+  limit: number;
+  remaining: number;
+  reset: number; // Unix timestamp
+  used: number;
+}
+
+interface GitHubRateLimitResponse {
+  resources: {
+    core: GitHubRateLimit;
+    search: GitHubRateLimit;
+    graphql: GitHubRateLimit;
+    integration_manifest: GitHubRateLimit;
+    source_import: GitHubRateLimit;
+    code_scanning_upload: GitHubRateLimit;
+    actions_runner_registration: GitHubRateLimit;
+    scim: GitHubRateLimit;
+    dependency_snapshots: GitHubRateLimit;
+  };
+  rate: GitHubRateLimit; // Legacy - same as resources.core
+}
+
 class GitHubApiError extends Error {
   constructor(message: string, public status?: number) {
     super(message);
@@ -126,8 +149,32 @@ export const githubApi = {
       }
       throw new GitHubApiError('Failed to fetch repository details');
     }
+  },
+
+  async fetchRateLimit(): Promise<GitHubRateLimitResponse> {
+    try {
+      const url = `${BASE_URL}/rate_limit`;
+      
+      const response = await fetch(url, { headers });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new GitHubApiError(
+          errorData.message || `GitHub API error: ${response.status}`,
+          response.status
+        );
+      }
+
+      const data: GitHubRateLimitResponse = await response.json();
+      return data;
+    } catch (error) {
+      if (error instanceof GitHubApiError) {
+        throw error;
+      }
+      throw new GitHubApiError('Failed to fetch rate limit information');
+    }
   }
 };
 
-export type { GitHubRepo, GitHubAPIResponse };
+export type { GitHubRepo, GitHubAPIResponse, GitHubRateLimit, GitHubRateLimitResponse };
 export { GitHubApiError }; 
