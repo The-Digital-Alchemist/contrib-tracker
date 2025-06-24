@@ -36,18 +36,26 @@ interface UseCanonicalReposState {
   filteredRepos: GitHubRepo[];
   totalCount: number;
   filteredCount: number;
+  currentPage: number;
+  totalPages: number;
   loading: boolean;
   error: string | null;
   availableLanguages: string[];
   refetch: () => Promise<void>;
+  goToPage: (page: number) => void;
+  nextPage: () => void;
+  prevPage: () => void;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 export const useCanonicalRepos = (
-  limit = 5, 
+  limit = 30, 
   filters?: Partial<FilterOptions>
 ): UseCanonicalReposState => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +95,7 @@ export const useCanonicalRepos = (
 
       if (needsAdvancedFiltering) {
         // Use advanced filtering API
-        response = await githubApi.fetchCanonicalReposAdvanced(1, limit, {
+        response = await githubApi.fetchCanonicalReposAdvanced(currentPage, limit, {
           search: debouncedSearch,
           language: debouncedLanguage,
           sortBy: currentFilters.sortBy === 'stars' ? 'stars' : 'updated',
@@ -102,7 +110,7 @@ export const useCanonicalRepos = (
         // Use simple filtering API for better performance
         const githubSortBy = currentFilters.sortBy === 'stars' ? 'stars' : 'updated';
         response = await githubApi.fetchCanonicalRepos(
-          1, 
+          currentPage, 
           limit, 
           debouncedSearch,
           githubSortBy,
@@ -124,6 +132,7 @@ export const useCanonicalRepos = (
       setLoading(false);
     }
   }, [
+    currentPage,
     limit, 
     debouncedSearch, 
     debouncedLanguage, 
@@ -164,17 +173,50 @@ export const useCanonicalRepos = (
   }, [repos]);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, debouncedLanguage, currentFilters.sortBy, currentFilters.sortOrder, currentFilters.activityFilter, currentFilters.contributorFriendly, currentFilters.repositorySize, currentFilters.minStars, currentFilters.hasRecentActivity]);
+
+  useEffect(() => {
     fetchRepos();
   }, [fetchRepos]);
+
+  const totalPages = Math.ceil(totalCount / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
+
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }, [totalPages]);
+
+  const nextPage = useCallback(() => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [hasNextPage]);
+
+  const prevPage = useCallback(() => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [hasPrevPage]);
 
   return {
     repos,
     filteredRepos,
     totalCount,
     filteredCount: filteredRepos.length,
+    currentPage,
+    totalPages,
     loading,
     error,
     availableLanguages,
     refetch: fetchRepos,
+    goToPage,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
   };
 }; 

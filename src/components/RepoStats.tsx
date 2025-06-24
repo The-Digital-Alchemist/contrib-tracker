@@ -3,13 +3,28 @@ import { useCanonicalRepos, type FilterOptions } from '../hooks/useCanonicalRepo
 import type { GitHubRepo } from '../services/githubApi';
 import Button from './Button';
 import RepoDetail from './RepoDetail';
+import Pagination from './Pagination';
 
 interface RepoStatsProps {
   filters?: Partial<FilterOptions>;
 }
 
 const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
-  const { filteredRepos, totalCount, filteredCount, loading, error, refetch } = useCanonicalRepos(30, filters);
+  const { 
+    filteredRepos, 
+    totalCount, 
+    filteredCount, 
+    currentPage,
+    totalPages,
+    loading, 
+    error, 
+    refetch,
+    goToPage,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage
+  } = useCanonicalRepos(30, filters);
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
   if (loading) {
@@ -114,14 +129,9 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
         {filteredRepos.map((repo) => (
           <div 
             key={repo.id} 
-            className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 hover:bg-gray-100 transition-all duration-200 cursor-pointer relative"
+            className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 hover:bg-gray-100 transition-all duration-200 cursor-pointer"
             onClick={() => setSelectedRepo(repo)}
           >
-            <div className="absolute top-2 right-2 text-gray-400 opacity-60">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </div>
             <div className="flex items-start justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
                 {repo.name}
@@ -165,14 +175,17 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
         ))}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-gray-200 flex justify-center">
-        <Button variant="secondary" onClick={refetch}>
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh Data
-        </Button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        onNext={nextPage}
+        onPrev={prevPage}
+        totalCount={totalCount}
+        pageSize={30}
+      />
     </div>
   );
 };
