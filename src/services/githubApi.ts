@@ -305,12 +305,13 @@ export const githubApi = {
         );
       }
 
-      let data: GitHubAPIResponse = await response.json();
+      const data: GitHubAPIResponse = await response.json();
 
       // Handle contributor-friendly filters that require additional API calls
-      if (filters.contributorFriendly && filters.contributorFriendly !== 'all') {
-        data = await this.enhanceWithContributorData(data, filters.contributorFriendly);
-      }
+      // TODO: Temporarily disabled due to rate limiting issues - will implement with caching
+      // if (filters.contributorFriendly && filters.contributorFriendly !== 'all') {
+      //   data = await this.enhanceWithContributorData(data, filters.contributorFriendly);
+      // }
 
       return data;
     } catch (error) {
