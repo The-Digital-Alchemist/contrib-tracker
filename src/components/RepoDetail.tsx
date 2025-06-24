@@ -145,18 +145,18 @@ const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onClose }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg max-w-6xl mx-auto">
+    <div className="bg-white rounded-lg shadow-lg max-w-6xl mx-auto border border-ubuntu-grey-200">
       {/* Header */}
-      <div className="border-b border-gray-200 p-6">
+      <div className="border-b border-ubuntu-grey-200 p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">{repo.name}</h1>
-              <span className="text-sm text-gray-500">by {owner}</span>
+              <h1 className="text-2xl font-bold text-ubuntu-cool-500">{repo.name}</h1>
+              <span className="text-sm text-ubuntu-grey-600">by {owner}</span>
               {onClose && (
                 <button 
                   onClick={onClose}
-                  className="ml-auto p-1 text-gray-400 hover:text-gray-600"
+                  className="ml-auto p-1 text-ubuntu-grey-500 hover:text-ubuntu-cool-600"
                   aria-label="Close"
                 >
                   ✕
@@ -164,9 +164,9 @@ const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onClose }) => {
               )}
             </div>
             {repo.description && (
-              <p className="text-gray-600 mb-4">{repo.description}</p>
+              <p className="text-ubuntu-cool-600 mb-4">{repo.description}</p>
             )}
-            <div className="flex items-center space-x-6 text-sm text-gray-500">
+            <div className="flex items-center space-x-6 text-sm text-ubuntu-grey-600">
               <span className="flex items-center">
                 ⭐ {formatNumber(repo.stargazers_count)} stars
               </span>
@@ -187,7 +187,7 @@ const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onClose }) => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-ubuntu-grey-200">
         <nav className="px-6">
           <div className="flex space-x-8">
             {[
@@ -199,10 +199,10 @@ const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onClose }) => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as typeof activeTab)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-ubuntu-orange-500 text-ubuntu-orange-600'
+                    : 'border-transparent text-ubuntu-grey-600 hover:text-ubuntu-cool-600 hover:border-ubuntu-grey-300'
                 }`}
               >
                 {tab.icon} {tab.label}
@@ -218,29 +218,29 @@ const RepoDetail: React.FC<RepoDetailProps> = ({ repo, onClose }) => {
           <div className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-green-50 border border-green-200 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-800">
+              <div className="bg-ubuntu-orange-50 border border-ubuntu-orange-200 p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold text-ubuntu-orange-700">
                   {state.loading.issues ? '...' : state.goodFirstIssues.length}
                 </div>
-                <div className="text-sm text-green-600">Good First Issues</div>
+                <div className="text-sm text-ubuntu-orange-600">Good First Issues</div>
               </div>
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-blue-800">
+              <div className="bg-ubuntu-purple-50 border border-ubuntu-purple-200 p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold text-ubuntu-purple-700">
                   {state.loading.prs ? '...' : state.recentPRs.length}
                 </div>
-                <div className="text-sm text-blue-600">Open PRs</div>
+                <div className="text-sm text-ubuntu-purple-600">Open PRs</div>
               </div>
-              <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-purple-800">
+              <div className="bg-ubuntu-accent-50 border border-ubuntu-accent-200 p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold text-ubuntu-accent-700">
                   {state.loading.commits ? '...' : state.recentCommits.length}
                 </div>
-                <div className="text-sm text-purple-600">Recent Commits</div>
+                <div className="text-sm text-ubuntu-accent-600">Recent Commits</div>
               </div>
-              <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-indigo-800">
+              <div className="bg-ubuntu-grey-100 border border-ubuntu-grey-300 p-4 rounded-lg text-center">
+                <div className="text-2xl font-bold text-ubuntu-cool-600">
                   {state.loading.contributors ? '...' : state.topContributors.length}
                 </div>
-                <div className="text-sm text-indigo-600">Contributors</div>
+                <div className="text-sm text-ubuntu-cool-500">Contributors</div>
               </div>
             </div>
 
