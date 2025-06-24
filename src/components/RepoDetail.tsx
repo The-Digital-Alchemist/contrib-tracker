@@ -7,7 +7,6 @@ import type {
   GitHubCommit, 
   GitHubContributor 
 } from '../services/githubApi';
-import Button from './Button';
 
 interface RepoDetailProps {
   repo: GitHubRepo;
