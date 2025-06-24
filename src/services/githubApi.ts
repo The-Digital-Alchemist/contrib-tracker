@@ -207,6 +207,183 @@ export const githubApi = {
     }
   },
 
+  async fetchCanonicalReposAdvanced(
+    page = 1,
+    perPage = 30,
+    filters: {
+      search?: string;
+      language?: string;
+      sortBy?: 'stars' | 'updated' | 'name';
+      sortOrder?: 'asc' | 'desc';
+      activityFilter?: 'all' | 'active' | 'recent' | 'stale';
+      contributorFriendly?: 'all' | 'good-first-issues' | 'highly-active' | 'well-maintained';
+      repositorySize?: 'all' | 'small' | 'medium' | 'large';
+      minStars?: number;
+      hasRecentActivity?: boolean;
+    } = {}
+  ): Promise<GitHubAPIResponse> {
+    try {
+      // Build the base search query
+      let query = 'org:canonical';
+      
+      // Add search term if provided
+      if (filters.search?.trim()) {
+        query += ` ${filters.search.trim()}`;
+      }
+      
+      // Add language filter if provided
+      if (filters.language?.trim()) {
+        query += ` language:${filters.language.trim()}`;
+      }
+
+      // Add star count filter if provided
+      if (filters.minStars && filters.minStars > 0) {
+        query += ` stars:>=${filters.minStars}`;
+      }
+
+      // Add repository size filter (based on stars)
+      if (filters.repositorySize && filters.repositorySize !== 'all') {
+        switch (filters.repositorySize) {
+          case 'small':
+            query += ' stars:<100';
+            break;
+          case 'medium':
+            query += ' stars:100..1000';
+            break;
+          case 'large':
+            query += ' stars:>1000';
+            break;
+        }
+      }
+
+      // Add activity-based filters
+      const now = new Date();
+      if (filters.activityFilter && filters.activityFilter !== 'all') {
+        switch (filters.activityFilter) {
+          case 'recent': {
+            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            query += ` pushed:>${oneMonthAgo.toISOString().split('T')[0]}`;
+            break;
+          }
+          case 'active': {
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+            query += ` pushed:>${sixMonthsAgo.toISOString().split('T')[0]}`;
+            break;
+          }
+          case 'stale': {
+            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+            query += ` pushed:<${oneYearAgo.toISOString().split('T')[0]}`;
+            break;
+          }
+        }
+      }
+
+      // Add recent activity filter
+      if (filters.hasRecentActivity) {
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        query += ` pushed:>${oneWeekAgo.toISOString().split('T')[0]}`;
+      }
+
+      // Build the URL with search parameters
+      const params = new URLSearchParams({
+        q: query,
+        sort: filters.sortBy || 'updated',
+        order: filters.sortOrder || 'desc',
+        page: page.toString(),
+        per_page: perPage.toString()
+      });
+      
+      const url = `${BASE_URL}/search/repositories?${params}`;
+      
+      const response = await fetch(url, { headers });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new GitHubApiError(
+          errorData.message || `GitHub API error: ${response.status}`,
+          response.status
+        );
+      }
+
+      let data: GitHubAPIResponse = await response.json();
+
+      // Handle contributor-friendly filters that require additional API calls
+      if (filters.contributorFriendly && filters.contributorFriendly !== 'all') {
+        data = await this.enhanceWithContributorData(data, filters.contributorFriendly);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof GitHubApiError) {
+        throw error;
+      }
+      throw new GitHubApiError('Failed to fetch repositories with advanced filters');
+    }
+  },
+
+  async enhanceWithContributorData(
+    repoData: GitHubAPIResponse,
+    contributorFilter: 'good-first-issues' | 'highly-active' | 'well-maintained'
+  ): Promise<GitHubAPIResponse> {
+    const enhancedRepos: GitHubRepo[] = [];
+
+    // Process repositories in parallel with rate limiting
+    const promises = repoData.items.map(async (repo) => {
+      try {
+        const [owner, repoName] = repo.full_name.split('/');
+        let includeRepo = false;
+
+        switch (contributorFilter) {
+          case 'good-first-issues': {
+            // Check if repository has good first issues
+            const goodFirstIssues = await this.fetchGoodFirstIssues(owner, repoName, 1);
+            includeRepo = goodFirstIssues.length > 0;
+            break;
+          }
+
+          case 'highly-active': {
+            // Check recent commit activity
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const recentCommits = await this.fetchRepoCommits(owner, repoName, oneWeekAgo, undefined, 10, 1);
+            includeRepo = recentCommits.length >= 5; // 5+ commits in last week
+            break;
+          }
+
+          case 'well-maintained': {
+            // Check if repository has recent issues/PR activity and multiple contributors
+            const [recentIssues, contributors] = await Promise.all([
+              this.fetchRepoIssues(owner, repoName, 'all', undefined, 'updated', 'desc', 5, 1),
+              this.fetchRepoContributors(owner, repoName, 10, 1)
+            ]);
+
+            const hasRecentActivity = recentIssues.some(issue => {
+              const updatedAt = new Date(issue.updated_at);
+              const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+              return updatedAt >= thirtyDaysAgo;
+            });
+
+            includeRepo = hasRecentActivity && contributors.length >= 3; // Recent activity + multiple contributors
+            break;
+          }
+        }
+
+        return includeRepo ? repo : null;
+      } catch (error) {
+        // If we can't determine contributor-friendliness, exclude the repo to be safe
+        console.warn(`Failed to check contributor data for ${repo.full_name}:`, error);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(promises);
+    enhancedRepos.push(...results.filter(repo => repo !== null) as GitHubRepo[]);
+
+    return {
+      total_count: enhancedRepos.length,
+      items: enhancedRepos
+    };
+  },
+
   async fetchRepoDetails(owner: string, repo: string): Promise<GitHubRepo> {
     try {
       const url = `${BASE_URL}/repos/${owner}/${repo}`;

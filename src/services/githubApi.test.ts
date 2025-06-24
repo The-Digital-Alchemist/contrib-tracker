@@ -191,4 +191,103 @@ describe('githubApi', () => {
       );
     });
   });
+
+  describe('fetchCanonicalReposAdvanced', () => {
+    const mockRepoResponse = {
+      total_count: 1,
+      items: [
+        {
+          id: 1,
+          name: 'test-repo',
+          full_name: 'canonical/test-repo',
+          description: 'A test repository',
+          stargazers_count: 150,
+          forks_count: 25,
+          language: 'Python',
+          updated_at: '2024-01-15T10:00:00Z',
+          html_url: 'https://github.com/canonical/test-repo'
+        }
+      ]
+    };
+
+    it('should fetch repos with advanced filtering', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRepoResponse
+      });
+
+      const result = await githubApi.fetchCanonicalReposAdvanced(1, 10, {
+        search: 'python',
+        language: 'Python',
+        minStars: 100,
+        repositorySize: 'medium',
+        activityFilter: 'recent'
+      });
+
+      expect(result.total_count).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].name).toBe('test-repo');
+      
+      // Verify the search query includes advanced filters (URL-encoded)
+      const fetchCall = mockFetch.mock.calls[0][0];
+      expect(fetchCall).toContain('org%3Acanonical'); // org:canonical
+      expect(fetchCall).toContain('python');
+      expect(fetchCall).toContain('language%3APython'); // language:Python
+      expect(fetchCall).toContain('stars%3A%3E%3D100'); // stars:>=100
+      expect(fetchCall).toContain('stars%3A100..1000'); // stars:100..1000
+      expect(fetchCall).toContain('pushed%3A%3E'); // pushed:>
+    });
+
+    it('should handle stale repository filtering', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRepoResponse
+      });
+
+      await githubApi.fetchCanonicalReposAdvanced(1, 10, {
+        activityFilter: 'stale'
+      });
+
+      const fetchCall = mockFetch.mock.calls[0][0];
+      expect(fetchCall).toContain('pushed%3A%3C'); // pushed:<
+    });
+
+    it('should handle repository size filtering', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRepoResponse
+      });
+
+      await githubApi.fetchCanonicalReposAdvanced(1, 10, {
+        repositorySize: 'large'
+      });
+
+      const fetchCall = mockFetch.mock.calls[0][0];
+      expect(fetchCall).toContain('stars%3A%3E1000'); // stars:>1000
+    });
+
+    it('should handle recent activity filtering', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockRepoResponse
+      });
+
+      await githubApi.fetchCanonicalReposAdvanced(1, 10, {
+        hasRecentActivity: true
+      });
+
+      const fetchCall = mockFetch.mock.calls[0][0];
+      expect(fetchCall).toContain('pushed%3A%3E'); // pushed:>
+    });
+
+    it('should handle API errors gracefully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: 'Rate limit exceeded' })
+      });
+
+      await expect(githubApi.fetchCanonicalReposAdvanced(1, 10, {})).rejects.toThrow(GitHubApiError);
+    });
+  });
 }); 

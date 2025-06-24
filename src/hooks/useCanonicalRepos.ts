@@ -75,17 +75,41 @@ export const useCanonicalRepos = (
       setLoading(true);
       setError(null);
       
-      // Map our sort options to GitHub API sort options (GitHub doesn't support name sorting)
-      const githubSortBy = currentFilters.sortBy === 'stars' ? 'stars' : 'updated';
-      
-      const response: GitHubAPIResponse = await githubApi.fetchCanonicalRepos(
-        1, 
-        limit, 
-        debouncedSearch,
-        githubSortBy,
-        currentFilters.sortOrder,
-        debouncedLanguage
-      );
+      // Check if we need advanced filtering (any non-default values)
+      const needsAdvancedFiltering = 
+        currentFilters.activityFilter !== 'all' ||
+        currentFilters.contributorFriendly !== 'all' ||
+        currentFilters.repositorySize !== 'all' ||
+        currentFilters.minStars > 0 ||
+        currentFilters.hasRecentActivity;
+
+      let response: GitHubAPIResponse;
+
+      if (needsAdvancedFiltering) {
+        // Use advanced filtering API
+        response = await githubApi.fetchCanonicalReposAdvanced(1, limit, {
+          search: debouncedSearch,
+          language: debouncedLanguage,
+          sortBy: currentFilters.sortBy === 'stars' ? 'stars' : 'updated',
+          sortOrder: currentFilters.sortOrder,
+          activityFilter: currentFilters.activityFilter,
+          contributorFriendly: currentFilters.contributorFriendly,
+          repositorySize: currentFilters.repositorySize,
+          minStars: currentFilters.minStars,
+          hasRecentActivity: currentFilters.hasRecentActivity
+        });
+      } else {
+        // Use simple filtering API for better performance
+        const githubSortBy = currentFilters.sortBy === 'stars' ? 'stars' : 'updated';
+        response = await githubApi.fetchCanonicalRepos(
+          1, 
+          limit, 
+          debouncedSearch,
+          githubSortBy,
+          currentFilters.sortOrder,
+          debouncedLanguage
+        );
+      }
       
       setRepos(response.items);
       setTotalCount(response.total_count);
@@ -99,61 +123,22 @@ export const useCanonicalRepos = (
     } finally {
       setLoading(false);
     }
-  }, [limit, debouncedSearch, debouncedLanguage, currentFilters.sortBy, currentFilters.sortOrder]);
+  }, [
+    limit, 
+    debouncedSearch, 
+    debouncedLanguage, 
+    currentFilters.sortBy, 
+    currentFilters.sortOrder,
+    currentFilters.activityFilter,
+    currentFilters.contributorFriendly,
+    currentFilters.repositorySize,
+    currentFilters.minStars,
+    currentFilters.hasRecentActivity
+  ]);
 
-  // Client-side filtering for advanced criteria (search, language, and basic sorting handled server-side)
+  // Minimal client-side filtering for name sorting only (GitHub API doesn't support name sorting)
   const filteredRepos = useMemo(() => {
-    let filtered = [...repos];
-
-    // Apply activity filter
-    if (currentFilters.activityFilter !== 'all') {
-      const now = new Date();
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-
-      filtered = filtered.filter(repo => {
-        const updatedAt = new Date(repo.updated_at);
-        
-        if (currentFilters.activityFilter === 'recent') {
-          return updatedAt >= oneMonthAgo;
-        } else if (currentFilters.activityFilter === 'active') {
-          return updatedAt >= sixMonthsAgo;
-        } else if (currentFilters.activityFilter === 'stale') {
-          return updatedAt < oneYearAgo;
-        }
-        return true;
-      });
-    }
-
-    // Apply minimum stars filter
-    if (currentFilters.minStars > 0) {
-      filtered = filtered.filter(repo => repo.stargazers_count >= currentFilters.minStars);
-    }
-
-    // Apply repository size filter (based on stars as a proxy for size/popularity)
-    if (currentFilters.repositorySize !== 'all') {
-      filtered = filtered.filter(repo => {
-        const stars = repo.stargazers_count;
-        if (currentFilters.repositorySize === 'small') {
-          return stars < 100;
-        } else if (currentFilters.repositorySize === 'medium') {
-          return stars >= 100 && stars < 1000;
-        } else if (currentFilters.repositorySize === 'large') {
-          return stars >= 1000;
-        }
-        return true;
-      });
-    }
-
-    // Apply recent activity filter
-    if (currentFilters.hasRecentActivity) {
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(repo => new Date(repo.updated_at) >= oneWeekAgo);
-    }
-
-    // Note: contributorFriendly filter will require API calls to check for good first issues
-    // This will be implemented as a separate async operation to avoid performance issues
+    const filtered = [...repos];
 
     // Client-side name sorting for GitHub API compatibility
     if (currentFilters.sortBy === 'name') {
@@ -164,15 +149,7 @@ export const useCanonicalRepos = (
     }
 
     return filtered;
-  }, [
-    repos, 
-    currentFilters.activityFilter, 
-    currentFilters.sortBy, 
-    currentFilters.sortOrder,
-    currentFilters.minStars,
-    currentFilters.repositorySize,
-    currentFilters.hasRecentActivity
-  ]);
+  }, [repos, currentFilters.sortBy, currentFilters.sortOrder]);
 
   // Get unique languages for filter dropdown
   // Note: Since language filtering is now server-side, we get languages from current results
