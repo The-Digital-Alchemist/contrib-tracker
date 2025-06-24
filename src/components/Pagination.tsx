@@ -74,12 +74,12 @@ const Pagination: React.FC<PaginationProps> = ({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-ubuntu-grey-300">
       {/* Results info */}
-      <div className="text-sm text-gray-600">
-        Showing <span className="font-medium">{startItem}</span> to{' '}
-        <span className="font-medium">{endItem}</span> of{' '}
-        <span className="font-medium">{totalCount.toLocaleString()}</span> repositories
+      <div className="text-sm text-ubuntu-cool-600">
+        Showing <span className="font-medium text-ubuntu-cool-500">{startItem}</span> to{' '}
+        <span className="font-medium text-ubuntu-cool-500">{endItem}</span> of{' '}
+        <span className="font-medium text-ubuntu-cool-500">{totalCount.toLocaleString()}</span> repositories
       </div>
 
       {/* Pagination controls */}
@@ -91,8 +91,8 @@ const Pagination: React.FC<PaginationProps> = ({
           className={`
             flex items-center gap-1 px-3 py-2 text-sm rounded-md border transition-all duration-200
             ${hasPrevPage 
-              ? 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm hover:scale-105 cursor-pointer' 
-              : 'border-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm hover:scale-105 cursor-pointer' 
+              : 'border-ubuntu-grey-200 text-ubuntu-grey-400 cursor-not-allowed'
             }
           `}
           aria-label="Previous page"
@@ -108,15 +108,15 @@ const Pagination: React.FC<PaginationProps> = ({
           {visiblePages.map((page, index) => (
             <React.Fragment key={index}>
               {page === '...' ? (
-                <span className="px-2 py-2 text-sm text-gray-400">...</span>
+                <span className="px-2 py-2 text-sm text-ubuntu-grey-500">...</span>
               ) : (
                 <button
                   onClick={() => onPageChange(page as number)}
                   className={`
                     px-3 py-2 text-sm rounded-md border transition-all duration-200 min-w-[2.5rem]
                     ${page === currentPage
-                      ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium shadow-sm cursor-default'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm hover:scale-105 cursor-pointer'
+                      ? 'border-ubuntu-orange-400 bg-ubuntu-orange-50 text-ubuntu-orange-700 font-medium shadow-sm cursor-default'
+                      : 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm hover:scale-105 cursor-pointer'
                     }
                   `}
                   aria-label={`Go to page ${page}`}
@@ -136,8 +136,8 @@ const Pagination: React.FC<PaginationProps> = ({
           className={`
             flex items-center gap-1 px-3 py-2 text-sm rounded-md border transition-all duration-200
             ${hasNextPage 
-              ? 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm hover:scale-105 cursor-pointer' 
-              : 'border-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm hover:scale-105 cursor-pointer' 
+              : 'border-ubuntu-grey-200 text-ubuntu-grey-400 cursor-not-allowed'
             }
           `}
           aria-label="Next page"
