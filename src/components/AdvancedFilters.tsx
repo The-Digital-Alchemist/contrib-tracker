@@ -20,9 +20,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+    <div className="bg-white rounded-lg shadow-sm border border-ubuntu-grey-200 p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">🎯 Advanced Filters</h3>
+        <h3 className="text-lg font-semibold text-ubuntu-cool-500">🎯 Advanced Filters</h3>
         <button
           onClick={() => onFiltersChange({
             search: '',
@@ -35,7 +35,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             minStars: 0,
             hasRecentActivity: false
           })}
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="text-sm text-ubuntu-grey-600 hover:text-ubuntu-orange-600 transition-colors"
           disabled={disabled}
         >
           Clear All
@@ -45,7 +45,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       {/* Search and Language Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="search-input" className="block text-sm font-medium text-ubuntu-cool-600 mb-2">
             🔍 Search Repositories
           </label>
           <input
@@ -55,12 +55,12 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             onChange={(e) => handleFilterChange('search', e.target.value)}
             placeholder="Search by name, description..."
             disabled={disabled}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2 border border-ubuntu-grey-300 rounded-lg focus:ring-2 focus:ring-ubuntu-orange-500 focus:border-ubuntu-orange-500 disabled:bg-ubuntu-grey-100 disabled:cursor-not-allowed"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-ubuntu-cool-600 mb-2">
             💻 Programming Language
           </label>
           <LanguageFilter
