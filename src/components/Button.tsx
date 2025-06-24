@@ -30,15 +30,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const buttonClasses = clsx(
       // Base button styles
-      'inline-flex items-center justify-center rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
+      'inline-flex items-center justify-center rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200',
       
-      // Variant styles
+      // Variant styles - Ubuntu themed
       {
-        'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500': variant === 'primary',
-        'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500': variant === 'secondary',
+        'bg-ubuntu-orange-500 text-white hover:bg-ubuntu-orange-600 focus:ring-ubuntu-orange-500 hover:shadow-lg': variant === 'primary',
+        'bg-ubuntu-grey-200 text-ubuntu-cool-500 hover:bg-ubuntu-grey-300 focus:ring-ubuntu-grey-500': variant === 'secondary',
         'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500': variant === 'positive',
         'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': variant === 'negative',
-        'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500': variant === 'neutral',
+        'bg-ubuntu-grey-100 text-ubuntu-cool-600 hover:bg-ubuntu-grey-200 focus:ring-ubuntu-grey-500': variant === 'neutral',
       },
 
       // Size styles
