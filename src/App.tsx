@@ -30,13 +30,13 @@ function App() {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-ubuntu-grey-50 font-ubuntu">
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-ubuntu-cool-500 mb-2">
             🌟 Canonical Contribution Tracker
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-ubuntu-cool-600 max-w-3xl mx-auto">
             Track repository health, surface good first issues, and grow community contributions across Ubuntu, Snapcraft, and the Canonical ecosystem.
           </p>
         </header>
@@ -45,11 +45,11 @@ function App() {
           <SetupNotice />
           <ApiStatus />
           
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-ubuntu-grey-200">
+            <h2 className="text-2xl font-semibold text-ubuntu-cool-500 mb-4">
               Get Started
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-ubuntu-cool-600 mb-6">
               Discover opportunities to contribute, monitor project health, and connect with the Canonical community.
             </p>
             
@@ -69,7 +69,7 @@ function App() {
           <div className="mt-8">
             <div className="mb-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-ubuntu-cool-500">
                   🔍 Discover Repositories
                 </h2>
                 <Button
@@ -94,7 +94,7 @@ function App() {
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ubuntu-grey-600">
               Empowering contributors across the Canonical ecosystem
             </p>
           </div>
