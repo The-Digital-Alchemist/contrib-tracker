@@ -1,1 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-ubuntu-orange-50: #FFF7F3;
+  --color-ubuntu-orange-100: #FFEDE5;
+  --color-ubuntu-orange-200: #FFD4C2;
+  --color-ubuntu-orange-300: #FFB894;
+  --color-ubuntu-orange-400: #FF9B6B;
+  --color-ubuntu-orange-500: #E95420;
+  --color-ubuntu-orange-600: #D04A1A;
+  --color-ubuntu-orange-700: #B63E16;
+  --color-ubuntu-orange-800: #9D3313;
+  --color-ubuntu-orange-900: #842B11;
+  
+  --color-ubuntu-purple-50: #F8F4F7;
+  --color-ubuntu-purple-100: #F0E8EE;
+  --color-ubuntu-purple-200: #E2D1DB;
+  --color-ubuntu-purple-300: #D3B9C8;
+  --color-ubuntu-purple-400: #C5A2B5;
+  --color-ubuntu-purple-500: #772953;
+  --color-ubuntu-purple-600: #6B2449;
+  --color-ubuntu-purple-700: #5F1F3F;
+  --color-ubuntu-purple-800: #531A35;
+  --color-ubuntu-purple-900: #47152B;
+  
+  --color-ubuntu-aubergine-50: #F5F2F4;
+  --color-ubuntu-aubergine-100: #EBE5E8;
+  --color-ubuntu-aubergine-200: #D6CBD1;
+  --color-ubuntu-aubergine-300: #C2B1BA;
+  --color-ubuntu-aubergine-400: #AD97A3;
+  --color-ubuntu-aubergine-500: #2C001E;
+  --color-ubuntu-aubergine-600: #28001B;
+  --color-ubuntu-aubergine-700: #240018;
+  --color-ubuntu-aubergine-800: #200015;
+  --color-ubuntu-aubergine-900: #1C0012;
+  
+  --color-ubuntu-grey-50: #FAFAFA;
+  --color-ubuntu-grey-100: #F5F5F5;
+  --color-ubuntu-grey-200: #EEEEEE;
+  --color-ubuntu-grey-300: #E0E0E0;
+  --color-ubuntu-grey-400: #BDBDBD;
+  --color-ubuntu-grey-500: #AEA79F;
+  --color-ubuntu-grey-600: #9E968E;
+  --color-ubuntu-grey-700: #8E847C;
+  --color-ubuntu-grey-800: #7E726A;
+  --color-ubuntu-grey-900: #6E6058;
+  
+  --color-ubuntu-cool-50: #F9F9F9;
+  --color-ubuntu-cool-100: #F2F2F2;
+  --color-ubuntu-cool-200: #E6E6E6;
+  --color-ubuntu-cool-300: #D9D9D9;
+  --color-ubuntu-cool-400: #CCCCCC;
+  --color-ubuntu-cool-500: #333333;
+  --color-ubuntu-cool-600: #2E2E2E;
+  --color-ubuntu-cool-700: #292929;
+  --color-ubuntu-cool-800: #242424;
+  --color-ubuntu-cool-900: #1F1F1F;
+  
+  --color-ubuntu-accent-50: #F7F4F6;
+  --color-ubuntu-accent-100: #EFE8ED;
+  --color-ubuntu-accent-200: #DFD1DB;
+  --color-ubuntu-accent-300: #CFBAC9;
+  --color-ubuntu-accent-400: #BFA3B7;
+  --color-ubuntu-accent-500: #77216F;
+  --color-ubuntu-accent-600: #6B1E63;
+  --color-ubuntu-accent-700: #5F1B57;
+  --color-ubuntu-accent-800: #53184B;
+  --color-ubuntu-accent-900: #47153F;
+  
+  --font-family-ubuntu: 'Ubuntu', system-ui, -apple-system, sans-serif;
+  --font-family-ubuntu-mono: 'Ubuntu Mono', Monaco, Consolas, monospace;
+}
+
+/* Legacy CSS variables for fallback */
+:root {
+  /* Ubuntu Colors */
+  --ubuntu-orange: #E95420;
+  --ubuntu-purple: #772953;
+  --ubuntu-aubergine: #2C001E;
+  --ubuntu-warm-grey: #AEA79F;
+  --ubuntu-cool-grey: #333333;
+  --ubuntu-light-aubergine: #77216F;
+}
+
+/* Ensure Ubuntu font is applied globally */
+body {
+  font-family: 'Ubuntu', system-ui, -apple-system, sans-serif;
+  color: var(--ubuntu-cool-grey);
+}
+
+/* Ubuntu-style smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for Ubuntu feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ubuntu-orange);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D04A1A;
+}
