@@ -7,19 +7,19 @@ describe('Button', () => {
     render(<Button>Click me</Button>);
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass('bg-gray-100', 'text-gray-700');
+    expect(button).toHaveClass('bg-ubuntu-grey-100', 'text-ubuntu-cool-600');
   });
 
   it('renders with primary variant', () => {
     render(<Button variant="primary">Primary Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-blue-600', 'text-white');
+    expect(button).toHaveClass('bg-ubuntu-orange-500', 'text-white');
   });
 
   it('renders with secondary variant', () => {
     render(<Button variant="secondary">Secondary Button</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-gray-200', 'text-gray-900');
+    expect(button).toHaveClass('bg-ubuntu-grey-200', 'text-ubuntu-cool-500');
   });
 
   it('renders with positive variant', () => {

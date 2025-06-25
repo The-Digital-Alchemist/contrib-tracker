@@ -50,10 +50,17 @@ const mockHookData = {
   filteredRepos: mockRepos,
   totalCount: 100,
   filteredCount: 2,
+  currentPage: 1,
+  totalPages: 4,
   loading: false,
   error: null,
   availableLanguages: ['Python', 'Go', 'TypeScript'],
   refetch: vi.fn(),
+  goToPage: vi.fn(),
+  nextPage: vi.fn(),
+  prevPage: vi.fn(),
+  hasNextPage: true,
+  hasPrevPage: false,
 };
 
 describe('RepoStats', () => {
@@ -170,7 +177,7 @@ describe('RepoStats', () => {
     // Find the outer repository card divs
     const allDivs = Array.from(document.querySelectorAll('div'));
     const clickableCards = allDivs.filter(div => 
-      div.className.includes('cursor-pointer') && div.className.includes('bg-gray-50')
+      div.className.includes('cursor-pointer') && div.className.includes('bg-ubuntu-grey-50')
     );
 
     expect(clickableCards).toHaveLength(2); // One for each repo
@@ -226,13 +233,13 @@ describe('RepoStats', () => {
     // Find the actual repository card elements
     const allDivs = Array.from(document.querySelectorAll('div'));
     const repoCards = allDivs.filter(div => 
-      div.className.includes('cursor-pointer') && div.className.includes('bg-gray-50')
+      div.className.includes('cursor-pointer') && div.className.includes('bg-ubuntu-grey-50')
     );
 
     expect(repoCards).toHaveLength(2);
     repoCards.forEach(card => {
       expect(card).toHaveClass('hover:shadow-md');
-      expect(card).toHaveClass('hover:border-gray-300');
+      expect(card).toHaveClass('hover:border-ubuntu-orange-300');
       expect(card).toHaveClass('cursor-pointer');
     });
   });
