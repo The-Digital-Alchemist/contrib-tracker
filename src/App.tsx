@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Button from './components/Button';
 import RepoStats from './components/RepoStats';
-import SetupNotice from './components/SetupNotice';
 import ApiStatus from './components/ApiStatus';
+import TokenStatus from './components/TokenStatus';
 import AdvancedFilters from './components/AdvancedFilters';
 import { useCanonicalRepos } from './hooks/useCanonicalRepos';
 import type { FilterOptions } from './hooks/useCanonicalRepos';
@@ -42,7 +42,7 @@ function App() {
         </header>
 
         <main className="max-w-2xl mx-auto">
-          <SetupNotice />
+          <TokenStatus />
           <ApiStatus />
           
           <div className="bg-white rounded-lg shadow-md p-6 border border-ubuntu-grey-200">
