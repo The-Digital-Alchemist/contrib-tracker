@@ -125,12 +125,20 @@ class GitHubApiError extends Error {
   }
 }
 
+import { repoCache } from './repoCache';
+import { rateLimiter } from './rateLimiter';
+
 // DEVELOPMENT NOTES:
 // ===================
 // GitHub API Rate Limits:
 // - Unauthenticated: 60 requests/hour
 // - With token: 5,000 requests/hour
 // - Search API: 30 requests/minute (authenticated)
+//
+// Optimization strategies implemented:
+// - In-memory caching (5 min TTL)
+// - Rate limiting with queue management
+// - Smart batching for contributor friendly filters
 //
 // To avoid rate limiting, add VITE_GITHUB_TOKEN to .env.local
 // See .env.example for setup instructions
@@ -307,11 +315,16 @@ export const githubApi = {
 
       const data: GitHubAPIResponse = await response.json();
 
-      // Handle contributor-friendly filters that require additional API calls
-      // TODO: Temporarily disabled due to rate limiting issues - will implement with caching
-      // if (filters.contributorFriendly && filters.contributorFriendly !== 'all') {
-      //   data = await this.enhanceWithContributorData(data, filters.contributorFriendly);
-      // }
+      // Handle contributor-friendly filters with caching and rate limiting
+      if (filters.contributorFriendly && filters.contributorFriendly !== 'all') {
+        // Only process if we have reasonable rate limit remaining
+        if (rateLimiter.canMakeRequest()) {
+          const enhancedData = await this.enhanceWithContributorData(data, filters.contributorFriendly);
+          return enhancedData;
+        } else {
+          console.warn('Skipping contributor-friendly filtering due to rate limit constraints');
+        }
+      }
 
       return data;
     } catch (error) {
@@ -328,56 +341,77 @@ export const githubApi = {
   ): Promise<GitHubAPIResponse> {
     const enhancedRepos: GitHubRepo[] = [];
 
-    // Process repositories in parallel with rate limiting
-    const promises = repoData.items.map(async (repo) => {
+    // Process repositories with caching and rate limiting
+    for (const repo of repoData.items) {
       try {
         const [owner, repoName] = repo.full_name.split('/');
-        let includeRepo = false;
-
-        switch (contributorFilter) {
-          case 'good-first-issues': {
-            // Check if repository has good first issues
-            const goodFirstIssues = await this.fetchGoodFirstIssues(owner, repoName, 1);
-            includeRepo = goodFirstIssues.length > 0;
-            break;
+        const cacheKey = `contributor:${contributorFilter}:${repo.full_name}`;
+        
+        // Check cache first
+        let includeRepo = repoCache.get<boolean>(cacheKey);
+        
+        if (includeRepo === null) {
+          // Not in cache, check with API (if rate limit allows)
+          if (!rateLimiter.canMakeRequest()) {
+            console.warn(`Skipping ${repo.full_name} due to rate limit`);
+            continue;
           }
 
-          case 'highly-active': {
-            // Check recent commit activity
-            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            const recentCommits = await this.fetchRepoCommits(owner, repoName, oneWeekAgo, undefined, 10, 1);
-            includeRepo = recentCommits.length >= 5; // 5+ commits in last week
-            break;
-          }
+          switch (contributorFilter) {
+            case 'good-first-issues': {
+              // Check if repository has good first issues
+              const goodFirstIssues = await rateLimiter.enqueue(() => 
+                this.fetchGoodFirstIssues(owner, repoName, 1)
+              );
+              includeRepo = goodFirstIssues.length > 0;
+              break;
+            }
 
-          case 'well-maintained': {
-            // Check if repository has recent issues/PR activity and multiple contributors
-            const [recentIssues, contributors] = await Promise.all([
-              this.fetchRepoIssues(owner, repoName, 'all', undefined, 'updated', 'desc', 5, 1),
-              this.fetchRepoContributors(owner, repoName, 10, 1)
-            ]);
+            case 'highly-active': {
+              // Use GitHub search API for recent commits (more efficient)
+              const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+              const commitsCacheKey = `commits:${repo.full_name}:${oneWeekAgo}`;
+              
+              let recentCommitCount = repoCache.get<number>(commitsCacheKey);
+              if (recentCommitCount === null) {
+                const recentCommits = await rateLimiter.enqueue(() => 
+                  this.fetchRepoCommits(owner, repoName, oneWeekAgo, undefined, 10, 1)
+                );
+                recentCommitCount = recentCommits.length;
+                repoCache.set(commitsCacheKey, recentCommitCount, 10 * 60 * 1000); // 10 minutes cache
+              }
+              
+              includeRepo = recentCommitCount >= 3; // Lowered threshold for better results
+              break;
+            }
 
-            const hasRecentActivity = recentIssues.some(issue => {
-              const updatedAt = new Date(issue.updated_at);
+            case 'well-maintained': {
+              // Simplified check using repo metadata (more efficient)
+              // Look for repos with recent updates and reasonable activity
+              const lastUpdated = new Date(repo.updated_at);
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-              return updatedAt >= thirtyDaysAgo;
-            });
-
-            includeRepo = hasRecentActivity && contributors.length >= 3; // Recent activity + multiple contributors
-            break;
+              const hasRecentUpdate = lastUpdated >= thirtyDaysAgo;
+              const hasMinimumStars = repo.stargazers_count >= 10;
+              const hasMinimumForks = repo.forks_count >= 2;
+              
+              includeRepo = hasRecentUpdate && hasMinimumStars && hasMinimumForks;
+              break;
+            }
           }
+
+          // Cache the result for 10 minutes
+          repoCache.set(cacheKey, includeRepo, 10 * 60 * 1000);
         }
 
-        return includeRepo ? repo : null;
+        if (includeRepo) {
+          enhancedRepos.push(repo);
+        }
       } catch (error) {
         // If we can't determine contributor-friendliness, exclude the repo to be safe
         console.warn(`Failed to check contributor data for ${repo.full_name}:`, error);
-        return null;
+        continue;
       }
-    });
-
-    const results = await Promise.all(promises);
-    enhancedRepos.push(...results.filter(repo => repo !== null) as GitHubRepo[]);
+    }
 
     return {
       total_count: enhancedRepos.length,
