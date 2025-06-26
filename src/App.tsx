@@ -4,6 +4,8 @@ import RepoStats from './components/RepoStats';
 import ApiStatus from './components/ApiStatus';
 import TokenStatus from './components/TokenStatus';
 import AdvancedFilters from './components/AdvancedFilters';
+import PersonalDashboard from './components/PersonalDashboard';
+import IssueExplorer from './components/IssueExplorer';
 import { useCanonicalRepos } from './hooks/useCanonicalRepos';
 import type { FilterOptions } from './hooks/useCanonicalRepos';
 import './App.css'
@@ -22,6 +24,8 @@ function App() {
   });
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showPersonalDashboard, setShowPersonalDashboard] = useState(false);
+  const [showIssueExplorer, setShowIssueExplorer] = useState(false);
 
   // Get available languages for the filter dropdown
   const { availableLanguages } = useCanonicalRepos(30, filters);
@@ -54,14 +58,19 @@ function App() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="primary">
-                Explore Issues
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowPersonalDashboard(true)}
+                className="bg-white border border-ubuntu-grey-300 hover:border-ubuntu-orange-500 hover:shadow-md transition-all"
+              >
+                🎯 Personal Dashboard
               </Button>
-              <Button variant="secondary">
-                Analyze Repositories
-              </Button>
-              <Button variant="secondary">
-                Join the Community
+              <Button 
+                variant="secondary"
+                onClick={() => setShowIssueExplorer(true)}
+                className="bg-white border border-ubuntu-grey-300 hover:border-ubuntu-orange-500 hover:shadow-md transition-all"
+              >
+                🔍 Explore Issues
               </Button>
             </div>
           </div>
@@ -99,6 +108,14 @@ function App() {
             </p>
           </div>
         </main>
+
+        {showPersonalDashboard && (
+          <PersonalDashboard onClose={() => setShowPersonalDashboard(false)} />
+        )}
+
+        {showIssueExplorer && (
+          <IssueExplorer onClose={() => setShowIssueExplorer(false)} />
+        )}
       </div>
     </div>
   );
