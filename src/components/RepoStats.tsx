@@ -4,6 +4,7 @@ import type { GitHubRepo } from '../services/githubApi';
 import Button from './Button';
 import RepoDetail from './RepoDetail';
 import Pagination from './Pagination';
+import FilterStatus from './FilterStatus';
 
 interface RepoStatsProps {
   filters?: Partial<FilterOptions>;
@@ -26,6 +27,15 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
     hasPrevPage
   } = useCanonicalRepos(30, filters);
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
+
+  // Check if advanced filtering is active
+  const isAdvancedFiltering = filters && (
+    filters.activityFilter !== 'all' ||
+    filters.contributorFriendly !== 'all' ||
+    filters.repositorySize !== 'all' ||
+    (filters.minStars && filters.minStars > 0) ||
+    filters.hasRecentActivity
+  );
 
   if (loading) {
     return (
@@ -124,6 +134,8 @@ const RepoStats: React.FC<RepoStatsProps> = ({ filters }) => {
           {filteredCount} of {totalCount.toLocaleString()} repos
         </div>
       </div>
+      
+      <FilterStatus isAdvancedFiltering={!!isAdvancedFiltering} isLoading={loading} />
       
       <div className="grid gap-4 md:grid-cols-2">
         {filteredRepos.map((repo) => (
