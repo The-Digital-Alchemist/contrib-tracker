@@ -636,15 +636,188 @@ export const githubApi = {
     repo: string, 
     perPage = 10
   ): Promise<GitHubIssue[]> {
-    return this.fetchRepoIssues(
-      owner, 
-      repo, 
-      'open', 
-      ['good first issue'], 
-      'created', 
-      'desc', 
-      perPage
-    );
+    // Convenience method - use the search API for better results
+    return this.fetchRepoIssues(owner, repo, 'open', ['good first issue'], 'created', 'desc', perPage);
+  },
+
+  // API for Personal Contribution Dashboard
+  async fetchUserContributions(username: string): Promise<{
+    totalCommits: number;
+    totalPRs: number;
+    totalIssues: number;
+    reposContributedTo: GitHubRepo[];
+    recentActivity: GitHubCommit[];
+  }> {
+    try {
+      // Search for the user's commits in Canonical org
+      const commitsUrl = `${BASE_URL}/search/commits?q=author:${username}+org:canonical&sort=author-date&order=desc&per_page=100`;
+      const commitsResponse = await rateLimiter.enqueue(() => fetch(commitsUrl, { headers }));
+      
+      if (!commitsResponse.ok) {
+        throw new GitHubApiError(`Failed to fetch user commits: ${commitsResponse.statusText}`, commitsResponse.status);
+      }
+      
+      const commitsData = await commitsResponse.json();
+      const totalCommits = commitsData.total_count || 0;
+      const recentActivity = commitsData.items?.slice(0, 10) || [];
+
+      // Search for user's pull requests in Canonical org  
+      const prsUrl = `${BASE_URL}/search/issues?q=author:${username}+org:canonical+type:pr&sort=created&order=desc&per_page=100`;
+      const prsResponse = await rateLimiter.enqueue(() => fetch(prsUrl, { headers }));
+      
+      if (!prsResponse.ok) {
+        throw new GitHubApiError(`Failed to fetch user PRs: ${prsResponse.statusText}`, prsResponse.status);
+      }
+      
+      const prsData = await prsResponse.json();
+      const totalPRs = prsData.total_count || 0;
+
+      // Search for user's issues in Canonical org
+      const issuesUrl = `${BASE_URL}/search/issues?q=author:${username}+org:canonical+type:issue&sort=created&order=desc&per_page=100`;
+      const issuesResponse = await rateLimiter.enqueue(() => fetch(issuesUrl, { headers }));
+      
+      if (!issuesResponse.ok) {
+        throw new GitHubApiError(`Failed to fetch user issues: ${issuesResponse.statusText}`, issuesResponse.status);
+      }
+      
+      const issuesData = await issuesResponse.json();
+      const totalIssues = issuesData.total_count || 0;
+
+      // Get unique repositories user has contributed to
+      const repoNames = new Set<string>();
+      [...(prsData.items || []), ...(issuesData.items || [])].forEach((item: { repository_url: string }) => {
+        repoNames.add(item.repository_url.split('/').slice(-2).join('/'));
+      });
+
+      const reposContributedTo: GitHubRepo[] = [];
+      for (const repoName of Array.from(repoNames).slice(0, 10)) {
+        try {
+          const [owner, repo] = repoName.split('/');
+          const repoData = await this.fetchRepoDetails(owner, repo);
+          reposContributedTo.push(repoData);
+        } catch (error) {
+          console.warn(`Failed to fetch details for ${repoName}:`, error);
+        }
+      }
+
+      return {
+        totalCommits,
+        totalPRs,
+        totalIssues,
+        reposContributedTo,
+        recentActivity
+      };
+    } catch (error) {
+      console.error('Error fetching user contributions:', error);
+      throw error;
+    }
+  },
+
+  async fetchUserRecommendations(username: string): Promise<{
+    languageBasedIssues: GitHubIssue[];
+    starredRepoIssues: GitHubIssue[];
+    similarContributorRepos: GitHubRepo[];
+  }> {
+    try {
+      // Get user's most used languages from their Canonical contributions
+      const userContributions = await this.fetchUserContributions(username);
+      const languageStats = new Map<string, number>();
+      
+      userContributions.reposContributedTo.forEach(repo => {
+        if (repo.language) {
+          languageStats.set(repo.language, (languageStats.get(repo.language) || 0) + 1);
+        }
+      });
+
+      const topLanguages = Array.from(languageStats.entries())
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3)
+        .map(([lang]) => lang);
+
+      // Find good first issues in user's preferred languages
+      const languageBasedIssues: GitHubIssue[] = [];
+      if (topLanguages.length > 0) {
+        const langQuery = topLanguages.map(lang => `language:${lang}`).join(' OR ');
+        const issuesUrl = `${BASE_URL}/search/issues?q=org:canonical+label:"good first issue"+state:open+(${langQuery})&sort=created&order=desc&per_page=10`;
+        
+        const response = await rateLimiter.enqueue(() => fetch(issuesUrl, { headers }));
+        if (response.ok) {
+          const data = await response.json();
+          languageBasedIssues.push(...(data.items || []));
+        }
+      }
+
+      // Get user's starred Canonical repos if they are publically available
+      const starredUrl = `${BASE_URL}/users/${username}/starred?per_page=100`;
+      const starredResponse = await rateLimiter.enqueue(() => fetch(starredUrl, { headers }));
+      
+      const starredRepoIssues: GitHubIssue[] = [];
+      if (starredResponse.ok) {
+        const starredRepos = await starredResponse.json();
+        const canonicalStarred = starredRepos.filter((repo: { full_name: string }) => 
+          repo.full_name.startsWith('canonical/')
+        ).slice(0, 5);
+
+        for (const repo of canonicalStarred) {
+          try {
+            const [owner, repoName] = repo.full_name.split('/');
+            const issues = await this.fetchGoodFirstIssues(owner, repoName, 3);
+            starredRepoIssues.push(...issues);
+          } catch (error) {
+            console.warn(`Failed to fetch issues for ${repo.full_name}:`, error);
+          }
+        }
+      }
+
+      // Find repos with similar contributors (simplified)
+      const similarContributorRepos: GitHubRepo[] = [];
+      if (userContributions.reposContributedTo.length > 0) {
+        // Get a random sample of repos they haven't contributed to
+        try {
+          const canonicalRepos = await this.fetchCanonicalRepos(1, 20, '', 'updated', 'desc');
+          const uncontributedRepos = canonicalRepos.items.filter(repo => 
+            !userContributions.reposContributedTo.some(contributed => contributed.id === repo.id)
+          );
+          similarContributorRepos.push(...uncontributedRepos.slice(0, 5));
+        } catch (error) {
+          console.warn('Failed to fetch similar repos:', error);
+        }
+      }
+
+      return {
+        languageBasedIssues,
+        starredRepoIssues,
+        similarContributorRepos
+      };
+    } catch (error) {
+      console.error('Error fetching user recommendations:', error);
+      throw error;
+    }
+  },
+
+  async fetchUserProfile(username: string): Promise<GitHubUser & {
+    bio: string | null;
+    blog: string | null;
+    company: string | null;
+    location: string | null;
+    public_repos: number;
+    followers: number;
+    following: number;
+    created_at: string;
+  }> {
+    try {
+      const url = `${BASE_URL}/users/${username}`;
+      const response = await rateLimiter.enqueue(() => fetch(url, { headers }));
+      
+      if (!response.ok) {
+        throw new GitHubApiError(`Failed to fetch user profile: ${response.statusText}`, response.status);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
   }
 };
 
