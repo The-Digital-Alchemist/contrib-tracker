@@ -25,18 +25,24 @@ const IssueExplorer: React.FC<IssueExplorerProps> = ({ onClose }) => {
     setError(null);
 
     try {
+      console.log('🔍 IssueExplorer: Starting to load data...');
+      
       // Load good first issues from popular Canonical repos
       const popularRepos = [
         'snapcraft', 'ubuntu-image', 'multipass', 'juju', 'lxd',
         'snapd', 'ubuntu-core-desktop', 'microk8s', 'charmed-kubernetes'
       ];
 
+      console.log(`🔍 IssueExplorer: Fetching issues from ${popularRepos.length} repositories...`);
+
       const issuePromises = popularRepos.map(async (repoName) => {
         try {
+          console.log(`   - Fetching issues from canonical/${repoName}...`);
           const repoIssues = await githubApi.fetchGoodFirstIssues('canonical', repoName, 5);
+          console.log(`   ✅ Found ${repoIssues.length} issues in ${repoName}`);
           return repoIssues;
         } catch (error) {
-          console.warn(`Failed to fetch issues for ${repoName}:`, error);
+          console.warn(`   ❌ Failed to fetch issues for ${repoName}:`, error);
           return [];
         }
       });
@@ -44,18 +50,33 @@ const IssueExplorer: React.FC<IssueExplorerProps> = ({ onClose }) => {
       const allIssuesArrays = await Promise.all(issuePromises);
       const allIssues = allIssuesArrays.flat();
       
+      console.log(`🔍 IssueExplorer: Found ${allIssues.length} total issues`);
+      
       // Sort by creation date (newest first)
       allIssues.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
       setIssues(allIssues);
 
       // Also load featured repositories for exploration
+      console.log('🔍 IssueExplorer: Loading featured repositories...');
       const repoData = await githubApi.fetchCanonicalRepos(1, 12, '', 'stars', 'desc');
+      console.log(`🔍 IssueExplorer: Found ${repoData.items.length} featured repositories`);
       setFeaturedRepos(repoData.items);
 
+      console.log('✅ IssueExplorer: Data loading complete!');
+
     } catch (err) {
-      console.error('Error loading issues:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load issues');
+      console.error('❌ IssueExplorer: Error loading data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load issues';
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('rate limit')) {
+        setError('GitHub API rate limit exceeded. Please add a GitHub token to .env.local or try again later.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setError('Network error: Unable to connect to GitHub API. Please check your internet connection.');
+      } else {
+        setError(`Unable to load issues: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }

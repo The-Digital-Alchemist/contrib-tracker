@@ -51,18 +51,42 @@ const PersonalDashboard: React.FC<PersonalDashboardProps> = ({ onClose }) => {
     setError(null);
 
     try {
+      console.log(`🎯 PersonalDashboard: Loading profile for ${username.trim()}...`);
+      
       const [userProfile, userContributions, userRecommendations] = await Promise.all([
-        githubApi.fetchUserProfile(username.trim()),
-        githubApi.fetchUserContributions(username.trim()),
-        githubApi.fetchUserRecommendations(username.trim())
+        githubApi.fetchUserProfile(username.trim()).then(profile => {
+          console.log(`✅ Profile loaded: ${profile.login} (${profile.followers} followers)`);
+          return profile;
+        }),
+        githubApi.fetchUserContributions(username.trim()).then(contributions => {
+          console.log(`✅ Contributions loaded: ${contributions.totalCommits} commits, ${contributions.totalPRs} PRs`);
+          return contributions;
+        }),
+        githubApi.fetchUserRecommendations(username.trim()).then(recommendations => {
+          console.log(`✅ Recommendations loaded: ${recommendations.languageBasedIssues.length} language-based issues`);
+          return recommendations;
+        })
       ]);
 
       setProfile(userProfile);
       setContributions(userContributions);
       setRecommendations(userRecommendations);
+      
+      console.log('✅ PersonalDashboard: All data loaded successfully!');
     } catch (err) {
-      console.error('Error loading user data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load user data');
+      console.error('❌ PersonalDashboard: Error loading user data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load user data';
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('Not Found') || errorMessage.includes('404')) {
+        setError(`User "${username.trim()}" not found. Please check the username and try again.`);
+      } else if (errorMessage.includes('rate limit')) {
+        setError('GitHub API rate limit exceeded. Please add a GitHub token to .env.local or try again later.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setError('Network error: Unable to connect to GitHub API. Please check your internet connection.');
+      } else {
+        setError(`Unable to load user data: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
