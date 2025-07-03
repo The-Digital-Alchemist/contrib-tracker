@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import React, { useState } from 'react';
+import React from 'react';
 import type { GitHubIssue, GitHubRepo } from '../services/githubApi';
 
 // Mock data for issues
@@ -65,7 +65,6 @@ interface MockIssueExplorerData {
 const IssueExplorerStorybook: React.FC<{ mockData?: MockIssueExplorerData }> = ({ mockData }) => {
   const {
     issues = mockIssues,
-    repos = mockRepos,
     isLoading = false,
     error = null
   } = mockData || {};
