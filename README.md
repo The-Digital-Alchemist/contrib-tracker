@@ -34,7 +34,7 @@ https://contrib-tracker.vercel.app/
 ### Main Application Views
 
 #### Main Page (No Token)
-![Main Page - No Token](../contrib-tracker-screenshots/main-page-notoken.png)
+![Main Page - No Token](/contrib-tracker-screenshots/main-page-notoken.png)
 *The main interface when no GitHub token is configured - shows basic repository browsing capabilities*
 
 #### Main Page (With Token)
