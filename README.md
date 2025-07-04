@@ -38,27 +38,27 @@ https://contrib-tracker.vercel.app/
 *The main interface when no GitHub token is configured - shows basic repository browsing capabilities*
 
 #### Main Page (With Token)
-![Main Page - With Token](../contrib-tracker-screenshots/main-page-token.png)
+![Main Page - With Token](/contrib-tracker-screenshots/main-page-token.png)
 *Enhanced view with GitHub token - provides higher rate limits and additional features*
 
 ### Core Features
 
 #### Repository Statistics
-![Repository Stats](../contrib-tracker-screenshots/repo-stats.png)
+![Repository Stats](/contrib-tracker-screenshots/repo-stats.png)
 *Detailed repository statistics showing stars, forks, issues, and activity metrics*
 
 #### Issue Explorer
-![Issue Explorer](../contrib-tracker-screenshots/issue-explorer.png)
+![Issue Explorer](/contrib-tracker-screenshots/issue-explorer.png)
 *Browse and filter issues across Canonical repositories to find contribution opportunities*
 
 #### Advanced Filters
-![Advanced Filters](../contrib-tracker-screenshots/advance-filters.png)
+![Advanced Filters](/contrib-tracker-screenshots/advance-filters.png)
 *Powerful filtering options to narrow down repositories by language, activity, and other criteria*
 
 ### Personal Dashboard
 
 #### Personal Contribution Dashboard
-![Personal Dashboard](../contrib-tracker-screenshots/personal-contribution-dashboard.png)
+![Personal Dashboard](/contrib-tracker-screenshots/personal-contribution-dashboard.png)
 *Personalized dashboard showing your contribution history*
 
 ### ✅ Core Functionality
