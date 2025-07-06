@@ -90,8 +90,8 @@ https://contrib-tracker.vercel.app/
 
 ```bash
 # Clone the repository
-git clone https://github.com/The-Digital-Alchemist/canonical-contribution-tracker.git
-cd canonical-contribution-tracker
+git clone https://github.com/The-Digital-Alchemist/contrib-tracker.git
+cd contrib-tracker
 
 # Install dependencies
 npm install
