@@ -23,12 +23,13 @@ const Pagination: React.FC<PaginationProps> = ({
   totalCount,
   pageSize
 }) => {
-  // Generate page numbers to show (max 7 pages: 1 ... 4 5 6 ... 10)
-  const getVisiblePages = () => {
+  // Generate page numbers to show (max 7 pages on desktop, 5 on mobile)
+  const getVisiblePages = (isMobile = false) => {
+    const maxPages = isMobile ? 5 : 7;
     const pages: (number | string)[] = [];
     
-    if (totalPages <= 7) {
-      // Show all pages if 7 or fewer
+    if (totalPages <= maxPages) {
+      // Show all pages if within limit
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
@@ -36,17 +37,19 @@ const Pagination: React.FC<PaginationProps> = ({
       // Always show first page
       pages.push(1);
       
-      if (currentPage <= 4) {
-        // Show 1 2 3 4 5 ... last
-        for (let i = 2; i <= 5; i++) {
+      const showEndPages = isMobile ? 2 : 4;
+      
+      if (currentPage <= showEndPages) {
+        // Show 1 2 3 4 ... last (or 1 2 3 ... last on mobile)
+        for (let i = 2; i <= (isMobile ? 3 : 5); i++) {
           pages.push(i);
         }
         pages.push('...');
         pages.push(totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        // Show 1 ... (last-4) (last-3) (last-2) (last-1) last
+      } else if (currentPage >= totalPages - (showEndPages - 1)) {
+        // Show 1 ... (last-3) (last-2) (last-1) last (or fewer on mobile)
         pages.push('...');
-        for (let i = totalPages - 4; i <= totalPages; i++) {
+        for (let i = totalPages - (isMobile ? 2 : 4); i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
@@ -63,7 +66,8 @@ const Pagination: React.FC<PaginationProps> = ({
     return pages;
   };
 
-  const visiblePages = getVisiblePages();
+  const visiblePagesDesktop = getVisiblePages(false);
+  const visiblePagesMobile = getVisiblePages(true);
   
   // Calculate result range
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -74,16 +78,88 @@ const Pagination: React.FC<PaginationProps> = ({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-ubuntu-grey-300">
+    <div className="flex flex-col items-center justify-between gap-4 pt-4 mt-6 border-t border-ubuntu-grey-300">
       {/* Results info */}
-      <div className="text-sm text-ubuntu-cool-600">
+      <div className="w-full text-sm text-center text-ubuntu-cool-600 sm:text-left sm:w-auto">
         Showing <span className="font-medium text-ubuntu-cool-500">{startItem}</span> to{' '}
         <span className="font-medium text-ubuntu-cool-500">{endItem}</span> of{' '}
         <span className="font-medium text-ubuntu-cool-500">{totalCount.toLocaleString()}</span> repositories
       </div>
 
-      {/* Pagination controls */}
-      <div className="flex items-center gap-2">
+      {/* Mobile pagination controls - stacked layout */}
+      <div className="flex flex-col w-full gap-3 sm:hidden">
+        {/* Page info and navigation buttons */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onPrev}
+            disabled={!hasPrevPage}
+            className={`
+              flex items-center gap-1 px-3 py-2 text-sm rounded-md border transition-all duration-200
+              ${hasPrevPage 
+                ? 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm active:scale-95' 
+                : 'border-ubuntu-grey-200 text-ubuntu-grey-400 cursor-not-allowed'
+              }
+            `}
+            aria-label="Previous page"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Prev
+          </button>
+
+          <span className="text-sm font-medium text-ubuntu-cool-600">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={onNext}
+            disabled={!hasNextPage}
+            className={`
+              flex items-center gap-1 px-3 py-2 text-sm rounded-md border transition-all duration-200
+              ${hasNextPage 
+                ? 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm active:scale-95' 
+                : 'border-ubuntu-grey-200 text-ubuntu-grey-400 cursor-not-allowed'
+              }
+            `}
+            aria-label="Next page"
+          >
+            Next
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Page numbers for mobile - more compactness */}
+        <div className="flex flex-wrap items-center justify-center gap-1">
+          {visiblePagesMobile.map((page, index) => (
+            <React.Fragment key={index}>
+              {page === '...' ? (
+                <span className="px-2 py-1 text-sm text-ubuntu-grey-500">...</span>
+              ) : (
+                <button
+                  onClick={() => onPageChange(page as number)}
+                  className={`
+                    px-2.5 py-1.5 text-sm rounded-md border transition-all duration-200 min-w-[2rem]
+                    ${page === currentPage
+                      ? 'border-ubuntu-orange-400 bg-ubuntu-orange-50 text-ubuntu-orange-700 font-medium shadow-sm cursor-default'
+                      : 'border-ubuntu-grey-300 text-ubuntu-cool-600 hover:bg-ubuntu-grey-50 hover:border-ubuntu-grey-400 hover:shadow-sm active:scale-95'
+                    }
+                  `}
+                  aria-label={`Go to page ${page}`}
+                  aria-current={page === currentPage ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop pagination controls - horizontal layout */}
+      <div className="items-center justify-center hidden gap-2 sm:flex">
         {/* Previous button */}
         <button
           onClick={onPrev}
@@ -105,7 +181,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
         {/* Page numbers */}
         <div className="flex items-center gap-1">
-          {visiblePages.map((page, index) => (
+          {visiblePagesDesktop.map((page, index) => (
             <React.Fragment key={index}>
               {page === '...' ? (
                 <span className="px-2 py-2 text-sm text-ubuntu-grey-500">...</span>
